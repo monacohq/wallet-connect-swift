@@ -140,6 +140,12 @@ open class WCInteractor {
                 self?.disconnect()
             }
     }
+    
+    open func updateSession(chainId: Int, accounts: [String]) -> Promise<Void> {
+        let result = WCSessionUpdateParam(approved: true, chainId: chainId, accounts: accounts)
+        let response = JSONRPCRequest(id: generateId(), method: WCEvent.sessionUpdate.rawValue, params: [result])
+        return encryptAndSend(data: response.encoded)
+    }
 
     open func approveBnbOrder(id: Int64, signed: WCBinanceOrderSignature) -> Promise<WCBinanceTxConfirmParam> {
         let result = signed.encodedString
