@@ -301,7 +301,7 @@ extension WCInteractor {
         switch messageType {
         case .ack:
             WCLog("<== receive: ACK")
-            onReceiveACK?(.rawMessage(topic: topic, messageType: messageType, payload: payload, timestamp: timestamp))
+            onReceiveACK?(.rawMessage(topic: topic, payload: payload, timestamp: timestamp))
         default:
             guard let payload = payload else { return }
             do {
@@ -329,7 +329,7 @@ extension WCInteractor {
 extension WCInteractor {
     public enum ACKMessage {
         case plain
-        case rawMessage(topic: String, messageType: WCSocketMessageType,
-                        payload: WCEncryptionPayload?, timestamp: UInt64?)
+        case rawMessage(topic: String, payload: WCEncryptionPayload?,
+                        timestamp: UInt64?)
     }
 }
