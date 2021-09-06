@@ -57,7 +57,7 @@ struct JSONRPCErrorResponse: Codable {
     let error: JSONRPCError
 }
 
-struct JSONRPCSession: Codable {
+public struct JSONRPCSession: Codable {
     let chainId: Int
     let account: String
 }

@@ -6,8 +6,11 @@
 
 import Foundation
 
-public typealias EthSignClosure = (_ id: Int64, _ payload: WCEthereumSignPayload) -> Void
-public typealias EthTransactionClosure = (_ id: Int64, _ event: WCEvent, _ transaction: WCEthereumTransaction) -> Void
+public typealias EthSignClosure = (_ id: Int64, _ payload: WCEthereumSignPayload,
+                                   _ session: JSONRPCSession?) -> Void
+public typealias EthTransactionClosure = (_ id: Int64, _ event: WCEvent,
+                                          _ transaction: WCEthereumTransaction,
+                                          _ session: JSONRPCSession?) -> Void
 
 public struct WCEthereumInteractor {
     public var onSign: EthSignClosure?
@@ -18,17 +21,17 @@ public struct WCEthereumInteractor {
         case .ethSign, .ethPersonalSign:
             let request: JSONRPCRequest<[String]> = try event.decode(decrypted)
             let payload = try JSONDecoder().decode(WCEthereumSignPayload.self, from: decrypted)
-            onSign?(request.id, payload)
+            onSign?(request.id, payload, request.session)
         case .ethSignTypeData:
              let payload = try JSONDecoder().decode(WCEthereumSignPayload.self, from: decrypted)
              guard case .signTypeData(let id, _, _) = payload else {
                 return
              }
-             onSign?(id, payload)
+             onSign?(id, payload, nil)
         case .ethSendTransaction, .ethSignTransaction:
             let request: JSONRPCRequest<[WCEthereumTransaction]> = try event.decode(decrypted)
             guard !request.params.isEmpty else { throw WCError.badJSONRPCRequest }
-            onTransaction?(request.id, event, request.params[0])
+            onTransaction?(request.id, event, request.params[0], request.session)
         default:
             break
         }
