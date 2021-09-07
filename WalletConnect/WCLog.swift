@@ -9,7 +9,7 @@ import Foundation
 public func WCLog(_ items: Any..., separator: String = " ", terminator: String = "\n") {
     #if DEBUG
     items.forEach {
-        Swift.print($0, separator: separator, terminator: terminator)
+        Swift.print("[WCLOG] \($0)", separator: separator, terminator: terminator)
     }
     #endif
 }

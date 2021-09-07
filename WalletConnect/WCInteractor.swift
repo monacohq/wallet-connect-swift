@@ -51,9 +51,18 @@ open class WCInteractor {
     private weak var sessionTimer: Timer?
     private let sessionRequestTimeout: TimeInterval
 
+    // subscription
+    private var subscribedTopics = [String]()
+    private let subscritionLock = NSLock()
+
+    /// comes from dDapp or extension
     public var peerId: String? {
         didSet {
             if let peerID = peerId {
+                /**
+                 Why subscribe peerID?
+                 ACK message is sent with peerID as topic
+                 */
                 subscribe(topic: peerID)
             }
         }
@@ -80,6 +89,8 @@ open class WCInteractor {
         socket.onText = { [weak self] text in self?.onReceiveMessage(text: text) }
         socket.onPong = { _ in WCLog("<== pong") }
         socket.onData = { data in WCLog("<== websocketDidReceiveData: \(data.toHexString())") }
+
+        WCLog("interactor init session.topic:\(session.topic) clientId:\(clientId)")
     }
 
     deinit {
@@ -180,10 +191,22 @@ open class WCInteractor {
 // MARK: internal funcs
 extension WCInteractor {
     private func subscribe(topic: String) {
+        subscritionLock.lock()
+        guard !subscribedTopics.contains(topic) else {
+            WCLog("\(topic) already subscribed")
+            subscritionLock.unlock()
+            return
+        }
+        subscritionLock.unlock()
+
         let message = WCSocketMessage(topic: topic, type: .sub, payload: "", timestamp: nil)
         let data = try! JSONEncoder().encode(message)
         socket.write(data: data)
         WCLog("==> subscribe: \(String(data: data, encoding: .utf8)!)")
+
+        subscritionLock.lock()
+        subscribedTopics.append(topic)
+        subscritionLock.unlock()
     }
 
     private func encryptAndSend(data: Data) -> Promise<Void> {
@@ -271,7 +294,6 @@ extension WCInteractor {
         checkExistingSession()
 
         subscribe(topic: session.topic)
-        subscribe(topic: clientId)
         subscribe(topic: clientId)
 
         connectResolver?.fulfill(true)
