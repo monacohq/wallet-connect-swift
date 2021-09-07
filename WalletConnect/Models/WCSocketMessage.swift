@@ -18,29 +18,41 @@ public struct WCEncryptionPayload: Codable {
     }
 }
 
+public enum WCSocketMessageType: String, Codable {
+    case pub
+    case sub
+    case ack
+}
+
 public struct WCSocketMessage<T: Codable>: Codable {
-    public enum MessageType: String, Codable {
-        case pub
-        case sub
-    }
     public let topic: String
-    public let type: MessageType
+    public let type: WCSocketMessageType
     public let payload: T
+    public let timestamp: UInt64?
 }
 
 public extension WCEncryptionPayload {
-    static func extract(_ string: String) -> (topic: String, payload: WCEncryptionPayload)? {
+    static func extract(_ string: String) -> (topic: String,
+                                              messageType: WCSocketMessageType,
+                                              payload: WCEncryptionPayload?,
+                                              timestamp: UInt64?)? {
         guard let data = string.data(using: .utf8) else {
             return nil
         }
         do {
             let decoder = JSONDecoder()
             if let message = try? decoder.decode(WCSocketMessage<WCEncryptionPayload>.self, from: data) {
-                return (message.topic, message.payload)
+                return (message.topic, message.type, message.payload, message.timestamp)
             } else {
                 let message = try decoder.decode(WCSocketMessage<String>.self, from: data)
-                let payloadData = message.payload.data(using: .utf8)
-                return  (message.topic, try decoder.decode(WCEncryptionPayload.self, from: payloadData!))
+                let payload: WCEncryptionPayload?
+                if !message.payload.isEmpty {
+                    let payloadData = message.payload.data(using: .utf8)
+                    payload = try decoder.decode(WCEncryptionPayload.self, from: payloadData!)
+                } else {
+                    payload = nil
+                }
+                return  (message.topic, message.type, payload, message.timestamp)
             }
         } catch let error {
             print(error)

@@ -18,6 +18,19 @@ struct JSONRPCRequest<T: Codable>: Codable {
     let jsonrpc = JSONRPCVersion
     let method: String
     let params: T
+    /**
+     Session info
+     
+     leave it optional make it compatible with the original walletConnect
+     */
+    let session: JSONRPCSession?
+
+    init(id: Int64, method: String, params: T, session: JSONRPCSession? = nil) {
+        self.id = id
+        self.method = method
+        self.params = params
+        self.session = session
+    }
 }
 
 struct JSONRPCResponse<T: Codable>: Codable {
@@ -42,6 +55,11 @@ struct JSONRPCErrorResponse: Codable {
     let jsonrpc = JSONRPCVersion
     let id: Int64
     let error: JSONRPCError
+}
+
+public struct JSONRPCSession: Codable {
+    let chainId: Int?
+    let account: String?
 }
 
 extension JSONRPCResponse {

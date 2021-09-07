@@ -13,6 +13,7 @@ public typealias SessionKilledClosure = () -> Void
 public typealias DisconnectClosure = (Error?) -> Void
 public typealias CustomRequestClosure = (_ id: Int64, _ request: [String: Any]) -> Void
 public typealias ErrorClosure = (Error) -> Void
+public typealias ReceiveACKClosure = (_ message: WCInteractor.ACKMessage) -> Void
 
 public enum WCInteractorState {
     case connected
@@ -39,6 +40,7 @@ open class WCInteractor {
     public var onDisconnect: DisconnectClosure?
     public var onError: ErrorClosure?
     public var onCustomRequest: CustomRequestClosure?
+    public var onReceiveACK: ReceiveACKClosure?
 
     // outgoing promise resolvers
     private var connectResolver: Resolver<Bool>?
@@ -49,7 +51,13 @@ open class WCInteractor {
     private weak var sessionTimer: Timer?
     private let sessionRequestTimeout: TimeInterval
 
-    public var peerId: String?
+    public var peerId: String? {
+        didSet {
+            if let peerID = peerId {
+                subscribe(topic: peerID)
+            }
+        }
+    }
     public var peerMeta: WCPeerMeta?
 
     public init(session: WCSession, meta: WCPeerMeta, uuid: UUID, sessionRequestTimeout: TimeInterval = 20) {
@@ -172,7 +180,7 @@ open class WCInteractor {
 // MARK: internal funcs
 extension WCInteractor {
     private func subscribe(topic: String) {
-        let message = WCSocketMessage(topic: topic, type: .sub, payload: "")
+        let message = WCSocketMessage(topic: topic, type: .sub, payload: "", timestamp: nil)
         let data = try! JSONEncoder().encode(message)
         socket.write(data: data)
         WCLog("==> subscribe: \(String(data: data, encoding: .utf8)!)")
@@ -183,7 +191,7 @@ extension WCInteractor {
         let encoder = JSONEncoder()
         let payload = try! WCEncryptor.encrypt(data: data, with: session.key)
         let payloadString = encoder.encodeAsUTF8(payload)
-        let message = WCSocketMessage(topic: peerId ?? session.topic, type: .pub, payload: payloadString)
+        let message = WCSocketMessage(topic: peerId ?? session.topic, type: .pub, payload: payloadString, timestamp: nil)
         let data = message.encoded
         return Promise { seal in
             socket.write(data: data) {
@@ -264,6 +272,7 @@ extension WCInteractor {
 
         subscribe(topic: session.topic)
         subscribe(topic: clientId)
+        subscribe(topic: clientId)
 
         connectResolver?.fulfill(true)
         connectResolver = nil
@@ -292,24 +301,39 @@ extension WCInteractor {
         WCLog("<== receive: \(text)")
         // handle ping in text format :(
         if text == "ping" { return socket.write(pong: Data()) }
-        guard let (topic, payload) = WCEncryptionPayload.extract(text) else { return }
-        do {
-            let decrypted = try WCEncryptor.decrypt(payload: payload, with: session.key)
-            guard let json = try JSONSerialization.jsonObject(with: decrypted, options: [])
-                as? [String: Any] else {
-                throw WCError.badJSONRPCRequest
-            }
-            WCLog("<== decrypted: \(String(data: decrypted, encoding: .utf8)!)")
-            if let method = json["method"] as? String {
-                if let event = WCEvent(rawValue: method) {
-                    try handleEvent(event, topic: topic, decrypted: decrypted)
-                } else if let id = json["id"] as? Int64 {
-                    onCustomRequest?(id, json)
+        guard let (topic, messageType, payload, timestamp) = WCEncryptionPayload.extract(text) else { return }
+        switch messageType {
+        case .ack:
+            WCLog("<== receive: ACK")
+            onReceiveACK?(.rawMessage(topic: topic, payload: payload, timestamp: timestamp))
+        default:
+            guard let payload = payload else { return }
+            do {
+                let decrypted = try WCEncryptor.decrypt(payload: payload, with: session.key)
+                guard let json = try JSONSerialization.jsonObject(with: decrypted, options: [])
+                    as? [String: Any] else {
+                    throw WCError.badJSONRPCRequest
                 }
+                WCLog("<== decrypted: \(String(data: decrypted, encoding: .utf8)!)")
+                if let method = json["method"] as? String {
+                    if let event = WCEvent(rawValue: method) {
+                        try handleEvent(event, topic: topic, decrypted: decrypted)
+                    } else if let id = json["id"] as? Int64 {
+                        onCustomRequest?(id, json)
+                    }
+                }
+            } catch let error {
+                onError?(error)
+                WCLog("==> onReceiveMessage error: \(error.localizedDescription)")
             }
-        } catch let error {
-            onError?(error)
-            WCLog("==> onReceiveMessage error: \(error.localizedDescription)")
         }
+    }
+}
+
+extension WCInteractor {
+    public enum ACKMessage {
+        case plain
+        case rawMessage(topic: String, payload: WCEncryptionPayload?,
+                        timestamp: UInt64?)
     }
 }
