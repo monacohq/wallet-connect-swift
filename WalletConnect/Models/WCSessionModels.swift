@@ -30,6 +30,16 @@ public struct WCSessionUpdateParam: Codable {
      */
     public let wallets: [WCSessionWalletInfo]?
 
+    public init(approved: Bool, chainId: Int?, accounts: [String]?,
+                selectedWalletId: String? = nil,
+                wallets: [WCSessionWalletInfo]? = nil) {
+        self.approved = approved
+        self.chainId = chainId
+        self.accounts = accounts
+        self.selectedWalletId = selectedWalletId
+        self.wallets = wallets
+    }
+
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(approved, forKey: .approved)
