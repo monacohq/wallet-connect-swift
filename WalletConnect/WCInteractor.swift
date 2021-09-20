@@ -166,9 +166,16 @@ open class WCInteractor {
             }
     }
     
-    open func updateSession(chainId: Int, accounts: [String]) -> Promise<Void> {
-        let result = WCSessionUpdateParam(approved: true, chainId: chainId, accounts: accounts)
-        let response = JSONRPCRequest(id: generateId(), method: WCEvent.sessionUpdate.rawValue, params: [result])
+    open func updateSession(chainId: Int, accounts: [String],
+                            method: String,
+                            selectedWalletId: String? = nil,
+                            wallets: [WCSessionWalletInfo]? = nil) -> Promise<Void> {
+        let result = WCSessionUpdateParam(approved: true,
+                                          chainId: chainId,
+                                          accounts: accounts,
+                                          selectedWalletId: selectedWalletId,
+                                          wallets: wallets)
+        let response = JSONRPCRequest(id: generateId(), method: method, params: [result])
         return encryptAndSend(data: response.encoded)
     }
 
@@ -240,7 +247,7 @@ extension WCInteractor {
             peerMeta = params.peerMeta
             sessionTimer?.invalidate()
             onSessionRequest?(request.id, params)
-        case .sessionUpdate:
+        case .sessionUpdate, .dc_sessionUpdate:
             // topic == clientId
             let request: JSONRPCRequest<[WCSessionUpdateParam]> = try event.decode(decrypted)
             guard let param = request.params.first else { throw WCError.badJSONRPCRequest }
