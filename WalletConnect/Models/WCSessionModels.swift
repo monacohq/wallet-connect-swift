@@ -51,9 +51,13 @@ public struct WCSessionUpdateParam: Codable {
 }
 
 public struct WCSessionWalletInfo: Codable {
+    /// wallet name
     public let name: String
+    /// wallet id
     public let id: String
+    /// wallet icon
     public let icon: String?
+    /// wallet address dict, [symbol : address string]
     public let address: [String : String]
 }
 
