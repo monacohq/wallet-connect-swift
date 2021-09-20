@@ -128,7 +128,10 @@ open class WCInteractor {
         handshakeId = -1
     }
 
-    open func approveSession(accounts: [String], chainId: Int) -> Promise<Void> {
+    open func approveSession(accounts: [String],
+                             chainId: Int,
+                             selectedWalletId: String? = nil,
+                             wallets: [WCSessionWalletInfo]? = nil) -> Promise<Void> {
         guard handshakeId > 0 else {
             return Promise(error: WCError.sessionInvalid)
         }
@@ -137,7 +140,9 @@ open class WCInteractor {
             chainId: chainId,
             accounts: accounts,
             peerId: clientId,
-            peerMeta: clientMeta
+            peerMeta: clientMeta,
+            selectedWalletId: selectedWalletId,
+            wallets: wallets
         )
         let response = JSONRPCResponse(id: handshakeId, result: result)
         return encryptAndSend(data: response.encoded)
@@ -226,7 +231,7 @@ extension WCInteractor {
 
     private func handleEvent(_ event: WCEvent, topic: String, decrypted: Data) throws {
         switch event {
-        case .sessionRequest:
+        case .sessionRequest, .dc_sessionRequest:
             // topic == session.topic
             let request: JSONRPCRequest<[WCSessionRequestParam]> = try event.decode(decrypted)
             guard let params = request.params.first else { throw WCError.badJSONRPCRequest }

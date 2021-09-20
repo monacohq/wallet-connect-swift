@@ -59,6 +59,14 @@ public struct WCSessionWalletInfo: Codable {
     public let icon: String?
     /// wallet address dict, [symbol : address string]
     public let address: [String : String]
+
+    public init(name: String, id: String,
+                icon: String?, address: [String : String]) {
+        self.name = name
+        self.id = id
+        self.icon = icon
+        self.address = address
+    }
 }
 
 public struct WCApproveSessionResponse: Codable {
