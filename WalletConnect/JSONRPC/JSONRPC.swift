@@ -6,7 +6,7 @@
 
 import Foundation
 
-let JSONRPCVersion = "2.0"
+let JSONRPCVersion = "2.1"
 
 struct JSONRPCError: Error, Codable {
     let code: Int
