@@ -255,6 +255,10 @@ extension WCInteractor {
                 disconnect()
                 self.onSessionKilled?()
             }
+        case .cosmos_sendTransaction:
+            let request: JSONRPCRequest<[String]> = try event.decode(decrypted)
+            guard let param = request.params.first else { throw WCError.badJSONRPCRequest }
+            WCLog("TBD cosmos_sendTransaction first param:\(param)")
         default:
             if WCEvent.eth.contains(event) {
                 try eth.handleEvent(event, topic: topic, decrypted: decrypted)
