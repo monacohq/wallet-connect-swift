@@ -17,11 +17,55 @@ public struct WCSessionUpdateParam: Codable {
     public let chainId: Int?
     public let accounts: [String]?
 
+    /**
+     Current selected wallet id.
+
+     Not nil when response to our __Crypto.com extension__
+     */
+    public let selectedWalletId: String?
+    /**
+     All wallets infos
+
+     Not nil when response to our __Crypto.com extension__
+     */
+    public let wallets: [WCSessionWalletInfo]?
+
+    public init(approved: Bool, chainId: Int?, accounts: [String]?,
+                selectedWalletId: String? = nil,
+                wallets: [WCSessionWalletInfo]? = nil) {
+        self.approved = approved
+        self.chainId = chainId
+        self.accounts = accounts
+        self.selectedWalletId = selectedWalletId
+        self.wallets = wallets
+    }
+
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(approved, forKey: .approved)
         try container.encode(chainId, forKey: .chainId)
         try container.encode(accounts, forKey: .accounts)
+        try container.encode(selectedWalletId, forKey: .selectedWalletId)
+        try container.encode(wallets, forKey: .wallets)
+    }
+}
+
+public struct WCSessionWalletInfo: Codable {
+    /// wallet name
+    public let name: String
+    /// wallet id
+    public let id: String
+    /// wallet icon
+    public let icon: String?
+    /// wallet address dict, [symbol : address string]
+    public let address: [String : String]
+
+    public init(name: String, id: String,
+                icon: String?, address: [String : String]) {
+        self.name = name
+        self.id = id
+        self.icon = icon
+        self.address = address
     }
 }
 
@@ -32,4 +76,17 @@ public struct WCApproveSessionResponse: Codable {
 
     public let peerId: String?
     public let peerMeta: WCPeerMeta?
+
+    /**
+     Current selected wallet id.
+
+     Not nil when response to our __Crypto.com extension__
+     */
+    public let selectedWalletId: String?
+    /**
+     All wallets infos
+
+     Not nil when response to our __Crypto.com extension__
+     */
+    public let wallets: [WCSessionWalletInfo]?
 }

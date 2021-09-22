@@ -21,7 +21,9 @@ struct JSONRPCRequest<T: Codable>: Codable {
     /**
      Session info
      
-     leave it optional make it compatible with the original walletConnect
+     leave it optional make it compatible with the original walletConnect</br>
+
+     this means if connect with original walletConnect, `self.session` is __ALWASY nil__
      */
     let session: JSONRPCSession?
 
