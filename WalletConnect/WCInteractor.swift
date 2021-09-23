@@ -29,6 +29,7 @@ open class WCInteractor {
 
     public let clientId: String
     public let clientMeta: WCPeerMeta
+    public private(set) var addressRequiredCoinTypes = [WCSessionAddressRequiredCoinType]()
 
     public var eth: WCEthereumInteractor
     public var bnb: WCBinanceInteractor
@@ -245,6 +246,7 @@ extension WCInteractor {
             handshakeId = request.id
             peerId = params.peerId
             peerMeta = params.peerMeta
+            addressRequiredCoinTypes = params.accountTypes ?? []
             sessionTimer?.invalidate()
             onSessionRequest?(request.id, params)
         case .sessionUpdate, .dc_sessionUpdate:

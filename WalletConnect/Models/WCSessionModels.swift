@@ -6,10 +6,20 @@
 
 import Foundation
 
+/**
+ Wallet address required coin types from extension's webSocket message.
+ */
+public enum WCSessionAddressRequiredCoinType: String, Codable {
+    case eth = "eth"
+    case cro = "cro"
+    case tcro = "tcro"
+}
+
 public struct WCSessionRequestParam: Codable {
     public let peerId: String
     public let peerMeta: WCPeerMeta
     public let chainId: Int?
+    public let accountTypes: [WCSessionAddressRequiredCoinType]?
 }
 
 public struct WCSessionUpdateParam: Codable {
