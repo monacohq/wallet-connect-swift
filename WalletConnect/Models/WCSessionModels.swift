@@ -18,8 +18,18 @@ public enum WCSessionAddressRequiredCoinType: String, Codable {
 public struct WCSessionRequestParam: Codable {
     public let peerId: String
     public let peerMeta: WCPeerMeta
-    public let chainId: Int?
+    public let chainId: String?
+    public let networkId: String?
     public let accountTypes: [WCSessionAddressRequiredCoinType]?
+
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        peerId = try values.decode(String.self, forKey: .peerId)
+        peerMeta = try values.decode(WCPeerMeta.self, forKey: .peerMeta)
+        chainId = try values.decodeIfPresent(String.self, forKey: .chainId)
+        networkId = try values.decodeIfPresent(String.self, forKey: .networkId)
+        accountTypes = try values.decodeIfPresent([WCSessionAddressRequiredCoinType].self, forKey: .accountTypes)
+    }
 }
 
 public struct WCSessionUpdateParam: Codable {

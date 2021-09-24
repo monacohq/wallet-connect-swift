@@ -60,7 +60,7 @@ struct JSONRPCErrorResponse: Codable {
 }
 
 public struct JSONRPCSession: Codable {
-    public let chainId: Int?
+    public let chainId: String?
     public let account: String?
 }
 
