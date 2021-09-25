@@ -13,7 +13,7 @@ struct JSONRPCError: Error, Codable {
     let message: String
 }
 
-struct JSONRPCRequest<T: Codable>: Codable {
+public struct JSONRPCRequest<T: Codable>: Codable {
     let id: Int64
     let jsonrpc = JSONRPCVersion
     let method: String
@@ -62,6 +62,21 @@ struct JSONRPCErrorResponse: Codable {
 public struct JSONRPCSession: Codable {
     public let chainId: String?
     public let account: String?
+
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        do {
+            chainId = try values.decodeIfPresent(String.self, forKey: .chainId)
+        } catch {
+            /// compatible with early version
+            if let chainIdIntValue = try values.decodeIfPresent(Int.self, forKey: .chainId) {
+                chainId = "\(chainIdIntValue)"
+            } else {
+                chainId = nil
+            }
+        }
+        account = try values.decodeIfPresent(String.self, forKey: .account)
+    }
 }
 
 extension JSONRPCResponse {
