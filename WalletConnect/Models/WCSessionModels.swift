@@ -26,7 +26,16 @@ public struct WCSessionRequestParam: Codable {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         peerId = try values.decode(String.self, forKey: .peerId)
         peerMeta = try values.decode(WCPeerMeta.self, forKey: .peerMeta)
-        chainId = try values.decodeIfPresent(String.self, forKey: .chainId)
+        do {
+            chainId = try values.decodeIfPresent(String.self, forKey: .chainId)
+        } catch {
+            /// compatible with early version
+            if let chainIdIntValue = try values.decodeIfPresent(Int.self, forKey: .chainId) {
+                chainId = "\(chainIdIntValue)"
+            } else {
+                chainId = nil
+            }
+        }
         networkId = try values.decodeIfPresent(String.self, forKey: .networkId)
         accountTypes = try values.decodeIfPresent([WCSessionAddressRequiredCoinType].self, forKey: .accountTypes)
     }
