@@ -138,7 +138,7 @@ open class WCInteractor {
         }
         let result = WCApproveSessionResponse(
             approved: true,
-            chainId: chainId,
+            chainId: "\(chainId)",
             accounts: accounts,
             peerId: clientId,
             peerMeta: clientMeta,
@@ -157,9 +157,10 @@ open class WCInteractor {
         return encryptAndSend(data: response.encoded)
     }
 
-    open func killSession() -> Promise<Void> {
+    @discardableResult
+    open func killSession(method: WCEvent) -> Promise<Void> {
         let result = WCSessionUpdateParam(approved: false, chainId: nil, accounts: nil)
-        let response = JSONRPCRequest(id: generateId(), method: WCEvent.sessionUpdate.rawValue, params: [result])
+        let response = JSONRPCRequest(id: generateId(), method: method.rawValue, params: [result])
         return encryptAndSend(data: response.encoded)
             .map { [weak self] in
                 self?.onSessionKilled?()
@@ -168,7 +169,7 @@ open class WCInteractor {
     }
     
     open func updateSession(chainId: Int, accounts: [String],
-                            method: String,
+                            method: WCEvent,
                             selectedWalletId: String? = nil,
                             wallets: [WCSessionWalletInfo]? = nil) -> Promise<Void> {
         let result = WCSessionUpdateParam(approved: true,
@@ -176,7 +177,7 @@ open class WCInteractor {
                                           accounts: accounts,
                                           selectedWalletId: selectedWalletId,
                                           wallets: wallets)
-        let response = JSONRPCRequest(id: generateId(), method: method, params: [result])
+        let response = JSONRPCRequest(id: generateId(), method: method.rawValue, params: [result])
         return encryptAndSend(data: response.encoded)
     }
 

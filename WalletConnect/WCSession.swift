@@ -8,10 +8,12 @@ import Foundation
 import CryptoSwift
 
 public struct WCSession: Codable, Equatable {
+    public static let deprecatedExtensionVersion = 1.0
     public let topic: String
     public let version: String
     public let bridge: URL
     public let key: Data
+    public let numericalVersion: Double
 
     public static func from(string: String) -> WCSession? {
         guard string .hasPrefix("wc:") else {
@@ -38,6 +40,8 @@ public struct WCSession: Codable, Equatable {
                 return nil
         }
 
-        return WCSession(topic: topic, version: version, bridge: bridgeUrl, key: Data(hex: key))
+        return WCSession(topic: topic, version: version, bridge: bridgeUrl,
+                         key: Data(hex: key),
+                         numericalVersion: Double(version) ?? 1.0)
     }
 }

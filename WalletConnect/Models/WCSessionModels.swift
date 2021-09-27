@@ -100,7 +100,7 @@ public struct WCSessionWalletInfo: Codable {
 
 public struct WCApproveSessionResponse: Codable {
     public let approved: Bool
-    public let chainId: Int
+    public let chainId: String
     public let accounts: [String]
 
     public let peerId: String?
