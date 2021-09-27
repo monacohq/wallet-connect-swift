@@ -30,6 +30,7 @@ open class WCInteractor {
     public let clientId: String
     public let clientMeta: WCPeerMeta
     public private(set) var addressRequiredCoinTypes = [WCSessionAddressRequiredCoinType]()
+    public private(set) var networkId: String?
 
     public var eth: WCEthereumInteractor
     public var bnb: WCBinanceInteractor
@@ -142,6 +143,7 @@ open class WCInteractor {
             accounts: accounts,
             peerId: clientId,
             peerMeta: clientMeta,
+            networkId: networkId,
             selectedWalletId: selectedWalletId,
             wallets: wallets
         )
@@ -175,6 +177,7 @@ open class WCInteractor {
         let result = WCSessionUpdateParam(approved: true,
                                           chainId: chainId,
                                           accounts: accounts,
+                                          networkId: networkId,
                                           selectedWalletId: selectedWalletId,
                                           wallets: wallets)
         let response = JSONRPCRequest(id: generateId(), method: method.rawValue, params: [result])
@@ -247,6 +250,7 @@ extension WCInteractor {
             handshakeId = request.id
             peerId = params.peerId
             peerMeta = params.peerMeta
+            networkId = params.networkId
             addressRequiredCoinTypes = params.accountTypes ?? []
             sessionTimer?.invalidate()
             onSessionRequest?(request.id, params)
