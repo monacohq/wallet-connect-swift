@@ -130,7 +130,7 @@ open class WCInteractor {
     }
 
     open func approveSession(accounts: [String],
-                             chainId: Int,
+                             chainId: String,
                              selectedWalletId: String? = nil,
                              wallets: [WCSessionWalletInfo]? = nil) -> Promise<Void> {
         guard handshakeId > 0 else {
@@ -138,7 +138,7 @@ open class WCInteractor {
         }
         let result = WCApproveSessionResponse(
             approved: true,
-            chainId: "\(chainId)",
+            chainId: chainId,
             accounts: accounts,
             peerId: clientId,
             peerMeta: clientMeta,
@@ -168,7 +168,7 @@ open class WCInteractor {
             }
     }
     
-    open func updateSession(chainId: Int, accounts: [String],
+    open func updateSession(chainId: String, accounts: [String],
                             method: WCEvent,
                             selectedWalletId: String? = nil,
                             wallets: [WCSessionWalletInfo]? = nil) -> Promise<Void> {

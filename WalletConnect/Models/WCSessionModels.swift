@@ -43,7 +43,7 @@ public struct WCSessionRequestParam: Codable {
 
 public struct WCSessionUpdateParam: Codable {
     public let approved: Bool
-    public let chainId: Int?
+    public let chainId: String?
     public let accounts: [String]?
 
     /**
@@ -59,7 +59,7 @@ public struct WCSessionUpdateParam: Codable {
      */
     public let wallets: [WCSessionWalletInfo]?
 
-    public init(approved: Bool, chainId: Int?, accounts: [String]?,
+    public init(approved: Bool, chainId: String?, accounts: [String]?,
                 selectedWalletId: String? = nil,
                 wallets: [WCSessionWalletInfo]? = nil) {
         self.approved = approved
