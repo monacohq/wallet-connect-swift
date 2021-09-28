@@ -19,7 +19,7 @@ public struct WCSessionRequestParam: Codable {
     public let peerId: String
     public let peerMeta: WCPeerMeta
     public let chainId: String?
-    public let networkId: String?
+    public let chainType: String?
     public let accountTypes: [WCSessionAddressRequiredCoinType]?
 
     public init(from decoder: Decoder) throws {
@@ -36,7 +36,7 @@ public struct WCSessionRequestParam: Codable {
                 chainId = nil
             }
         }
-        networkId = try values.decodeIfPresent(String.self, forKey: .networkId)
+        chainType = try values.decodeIfPresent(String.self, forKey: .chainType)
         accountTypes = try values.decodeIfPresent([WCSessionAddressRequiredCoinType].self, forKey: .accountTypes)
     }
 }
@@ -49,7 +49,7 @@ public struct WCSessionUpdateParam: Codable {
     /**
      'eth' or 'cosmos'
      */
-    public let networkId: String?
+    public let chainType: String?
 
     /**
      Current selected wallet id.
@@ -65,13 +65,13 @@ public struct WCSessionUpdateParam: Codable {
     public let wallets: [WCSessionWalletInfo]?
 
     public init(approved: Bool, chainId: String?, accounts: [String]?,
-                networkId: String? = nil,
+                chainType: String? = nil,
                 selectedWalletId: String? = nil,
                 wallets: [WCSessionWalletInfo]? = nil) {
         self.approved = approved
         self.chainId = chainId
         self.accounts = accounts
-        self.networkId = networkId
+        self.chainType = chainType
         self.selectedWalletId = selectedWalletId
         self.wallets = wallets
     }
@@ -81,7 +81,7 @@ public struct WCSessionUpdateParam: Codable {
         try container.encode(approved, forKey: .approved)
         try container.encode(chainId, forKey: .chainId)
         try container.encode(accounts, forKey: .accounts)
-        try container.encodeIfPresent(networkId, forKey: .networkId)
+        try container.encodeIfPresent(chainType, forKey: .chainType)
         try container.encodeIfPresent(selectedWalletId, forKey: .selectedWalletId)
         try container.encodeIfPresent(wallets, forKey: .wallets)
     }
@@ -117,7 +117,7 @@ public struct WCApproveSessionResponse: Codable {
     /**
      'eth' or 'cosmos'
      */
-    public let networkId: String?
+    public let chainType: String?
 
     /**
      Current selected wallet id.
@@ -134,7 +134,7 @@ public struct WCApproveSessionResponse: Codable {
 
     public init(approved: Bool, chainId: String, accounts: [String],
                 peerId: String?, peerMeta: WCPeerMeta?,
-                networkId: String? = nil,
+                chainType: String? = nil,
                 selectedWalletId: String? = nil,
                 wallets: [WCSessionWalletInfo]? = nil) {
         self.approved = approved
@@ -142,7 +142,7 @@ public struct WCApproveSessionResponse: Codable {
         self.accounts = accounts
         self.peerId = peerId
         self.peerMeta = peerMeta
-        self.networkId = networkId
+        self.chainType = chainType
         self.selectedWalletId = selectedWalletId
         self.wallets = wallets
     }
@@ -154,7 +154,7 @@ public struct WCApproveSessionResponse: Codable {
         try container.encode(accounts, forKey: .accounts)
         try container.encode(peerId, forKey: .peerId)
         try container.encode(peerMeta, forKey: .peerMeta)
-        try container.encodeIfPresent(networkId, forKey: .networkId)
+        try container.encodeIfPresent(chainType, forKey: .chainType)
         try container.encodeIfPresent(selectedWalletId, forKey: .selectedWalletId)
         try container.encodeIfPresent(wallets, forKey: .wallets)
     }
