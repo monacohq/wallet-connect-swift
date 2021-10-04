@@ -95,14 +95,27 @@ public struct WCSessionWalletInfo: Codable {
     /// wallet icon
     public let icon: String?
     /// wallet address dict, [symbol : address string]
-    public let address: [String : String]
+    public let address: [String : WalletAddress]
 
     public init(name: String, id: String,
-                icon: String?, address: [String : String]) {
+                icon: String?, address: [String : WalletAddress]) {
         self.name = name
         self.id = id
         self.icon = icon
         self.address = address
+    }
+
+    public struct WalletAddress: Codable {
+        let address: String
+        let algo: String?
+        let pubkey: String?
+
+        public init(address: String, pubkey: String?) {
+            // in case of eth address, algo and pubkey do not exist
+            self.algo = pubkey != nil ? "secp256k1" : nil
+            self.address = address
+            self.pubkey = pubkey
+        }
     }
 }
 
