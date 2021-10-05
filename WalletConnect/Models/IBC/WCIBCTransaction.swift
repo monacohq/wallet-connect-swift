@@ -109,9 +109,19 @@ extension WCIBCTransaction {
         public let pub_key: Pub_key
         public let signature: String
 
+        public init(pub_key: Pub_key, signature: String) {
+            self.pub_key = pub_key
+            self.signature = signature
+        }
+
         public struct Pub_key: Codable {
             public let type: String
             public let value: String
+
+            public init(type: String, value: String) {
+                self.type = type
+                self.value = value
+            }
         }
     }
 }
@@ -125,5 +135,10 @@ extension WCIBCTransaction {
     public struct ResponseResult: Codable {
         public let signed: SignDoc
         public let signature: Signature
+
+        public init(signed: SignDoc, signature: Signature) {
+            self.signed = signed
+            self.signature = signature
+        }
     }
 }
