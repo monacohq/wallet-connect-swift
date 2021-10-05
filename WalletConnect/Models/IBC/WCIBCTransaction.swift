@@ -9,19 +9,7 @@ import Foundation
 import UIKit
 import SwiftUI
 
-public struct WCIBCTransaction: Codable {
-    public let signerAddress: String
-    public let signDoc: SignDoc
-}
-
-extension WCIBCTransaction {
-    public struct SignDoc: Codable {
-        public let chainId: String
-        public let accountNumber: String
-        public let body: Body
-        public let authInfo: AuthInfo
-    }
-}
+public struct WCIBCTransaction { }
 
 extension WCIBCTransaction {
     public struct Body: Codable {
@@ -108,5 +96,34 @@ extension WCIBCTransaction {
             public let amount: [Amount]
         }
 
+    }
+
+    public struct SignDoc: Codable {
+        public let chainId: String
+        public let accountNumber: String
+        public let body: Body
+        public let authInfo: AuthInfo
+    }
+
+    public struct Signature: Codable {
+        public let pub_key: Pub_key
+        public let signature: String
+
+        public struct Pub_key: Codable {
+            public let type: String
+            public let value: String
+        }
+    }
+}
+
+extension WCIBCTransaction {
+    public struct RequestParam: Codable {
+        public let signerAddress: String
+        public let signDoc: SignDoc
+    }
+
+    public struct ResponseResult: Codable {
+        public let signed: SignDoc
+        public let signature: Signature
     }
 }
