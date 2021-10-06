@@ -95,14 +95,14 @@ public struct WCSessionWalletInfo: Codable {
     /// wallet icon
     public let icon: String?
     /// wallet address dict, [symbol : address string]
-    public let address: [String : WalletAddress]
+    public let addresses: [String : WalletAddress]
 
     public init(name: String, id: String,
-                icon: String?, address: [String : WalletAddress]) {
+                icon: String?, addresses: [String : WalletAddress]) {
         self.name = name
         self.id = id
         self.icon = icon
-        self.address = address
+        self.addresses = addresses
     }
 
     public struct WalletAddress: Codable {
