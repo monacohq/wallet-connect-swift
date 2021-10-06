@@ -10,23 +10,7 @@ import UIKit
 import SwiftUI
 
 public struct WCIBCTransaction {
-    //will do a generic modification
-    public typealias Transaction = WCEthereumTransaction
-}
-
-extension WCIBCTransaction {
-    public static func transactionFromRequest(_ requestParam: RequestParam) -> Transaction? {
-        guard let message = requestParam.signDoc.body.messages.first else {
-            return nil
-        }
-        assertionFailure("TBD")
-        return WCIBCTransaction.Transaction.init(from: message.value.sender,
-                                                 to: message.value.receiver,
-                                                 nonce: nil,
-                                                 gasPrice: nil,
-                                                 gas: "???", gasLimit: nil,
-                                                 value: "???", data: "???")
-    }
+    public let requestParam: RequestParam
 }
 
 extension WCIBCTransaction {

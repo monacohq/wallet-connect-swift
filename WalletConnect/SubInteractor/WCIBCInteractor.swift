@@ -7,7 +7,9 @@
 
 import Foundation
 
-public typealias IBCTransactionClosure = EthTransactionClosure
+public typealias IBCTransactionClosure = (_ id: Int64, _ event: WCEvent,
+                                          _ transaction: WCIBCTransaction,
+                                          _ session: JSONRPCSession?) -> Void
 
 public struct WCIBCInteractor {
     public var onTransaction: IBCTransactionClosure?

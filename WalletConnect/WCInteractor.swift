@@ -266,8 +266,8 @@ extension WCInteractor {
             }
         case .cosmos_sendTransaction:
             let request: JSONRPCRequest<[WCIBCTransaction.RequestParam]> = try event.decode(decrypted)
-            guard let param = request.params.first,
-                  let transaction = WCIBCTransaction.transactionFromRequest(param) else { throw WCError.badJSONRPCRequest }
+            guard let param = request.params.first else { throw WCError.badJSONRPCRequest }
+            let transaction = WCIBCTransaction(requestParam: param)
             ibc.onTransaction?(request.id, event, transaction, request.session)
         default:
             if WCEvent.eth.contains(event) {
