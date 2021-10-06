@@ -35,6 +35,7 @@ open class WCInteractor {
     public var eth: WCEthereumInteractor
     public var bnb: WCBinanceInteractor
     public var trust: WCTrustInteractor
+    public var ibc: WCIBCInteractor
 
     // incoming event handlers
     public var onSessionRequest: SessionRequestClosure?
@@ -85,6 +86,7 @@ open class WCInteractor {
         self.eth = WCEthereumInteractor()
         self.bnb = WCBinanceInteractor()
         self.trust = WCTrustInteractor()
+        self.ibc = WCIBCInteractor()
 
         socket.onConnect = { [weak self] in self?.onConnect() }
         socket.onDisconnect = { [weak self] error in self?.onDisconnect(error: error) }
@@ -263,9 +265,10 @@ extension WCInteractor {
                 self.onSessionKilled?()
             }
         case .cosmos_sendTransaction:
-            let request: JSONRPCRequest<[String]> = try event.decode(decrypted)
-            guard let param = request.params.first else { throw WCError.badJSONRPCRequest }
-            WCLog("TBD cosmos_sendTransaction first param:\(param)")
+            let request: JSONRPCRequest<[WCIBCTransaction.RequestParam]> = try event.decode(decrypted)
+            guard let param = request.params.first,
+                  let transaction = WCIBCTransaction.transactionFromRequest(param) else { throw WCError.badJSONRPCRequest }
+            ibc.onTransaction?(request.id, event, transaction, request.session)
         default:
             if WCEvent.eth.contains(event) {
                 try eth.handleEvent(event, topic: topic, decrypted: decrypted)
