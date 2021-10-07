@@ -29,10 +29,13 @@ open class WCInteractor {
 
     public let clientId: String
     public let clientMeta: WCPeerMeta
+    public private(set) var addressRequiredCoinTypes = [WCSessionAddressRequiredCoinType]()
+    public private(set) var chainType: String?
 
     public var eth: WCEthereumInteractor
     public var bnb: WCBinanceInteractor
     public var trust: WCTrustInteractor
+    public var ibc: WCIBCInteractor
 
     // incoming event handlers
     public var onSessionRequest: SessionRequestClosure?
@@ -83,6 +86,7 @@ open class WCInteractor {
         self.eth = WCEthereumInteractor()
         self.bnb = WCBinanceInteractor()
         self.trust = WCTrustInteractor()
+        self.ibc = WCIBCInteractor()
 
         socket.onConnect = { [weak self] in self?.onConnect() }
         socket.onDisconnect = { [weak self] error in self?.onDisconnect(error: error) }
@@ -129,7 +133,7 @@ open class WCInteractor {
     }
 
     open func approveSession(accounts: [String],
-                             chainId: Int,
+                             chainId: String,
                              selectedWalletId: String? = nil,
                              wallets: [WCSessionWalletInfo]? = nil) -> Promise<Void> {
         guard handshakeId > 0 else {
@@ -141,6 +145,7 @@ open class WCInteractor {
             accounts: accounts,
             peerId: clientId,
             peerMeta: clientMeta,
+            chainType: chainType,
             selectedWalletId: selectedWalletId,
             wallets: wallets
         )
@@ -156,9 +161,10 @@ open class WCInteractor {
         return encryptAndSend(data: response.encoded)
     }
 
-    open func killSession() -> Promise<Void> {
+    @discardableResult
+    open func killSession(method: WCEvent) -> Promise<Void> {
         let result = WCSessionUpdateParam(approved: false, chainId: nil, accounts: nil)
-        let response = JSONRPCRequest(id: generateId(), method: WCEvent.sessionUpdate.rawValue, params: [result])
+        let response = JSONRPCRequest(id: generateId(), method: method.rawValue, params: [result])
         return encryptAndSend(data: response.encoded)
             .map { [weak self] in
                 self?.onSessionKilled?()
@@ -166,16 +172,17 @@ open class WCInteractor {
             }
     }
     
-    open func updateSession(chainId: Int, accounts: [String],
-                            method: String,
+    open func updateSession(chainId: String, accounts: [String],
+                            method: WCEvent,
                             selectedWalletId: String? = nil,
                             wallets: [WCSessionWalletInfo]? = nil) -> Promise<Void> {
         let result = WCSessionUpdateParam(approved: true,
                                           chainId: chainId,
                                           accounts: accounts,
+                                          chainType: chainType,
                                           selectedWalletId: selectedWalletId,
                                           wallets: wallets)
-        let response = JSONRPCRequest(id: generateId(), method: method, params: [result])
+        let response = JSONRPCRequest(id: generateId(), method: method.rawValue, params: [result])
         return encryptAndSend(data: response.encoded)
     }
 
@@ -245,6 +252,8 @@ extension WCInteractor {
             handshakeId = request.id
             peerId = params.peerId
             peerMeta = params.peerMeta
+            chainType = params.chainType
+            addressRequiredCoinTypes = params.accountTypes ?? []
             sessionTimer?.invalidate()
             onSessionRequest?(request.id, params)
         case .sessionUpdate, .dc_sessionUpdate:
@@ -255,6 +264,11 @@ extension WCInteractor {
                 disconnect()
                 self.onSessionKilled?()
             }
+        case .cosmos_sendTransaction:
+            let request: JSONRPCRequest<[WCIBCTransaction.RequestParam]> = try event.decode(decrypted)
+            guard let param = request.params.first else { throw WCError.badJSONRPCRequest }
+            let transaction = WCIBCTransaction(requestParam: param)
+            ibc.onTransaction?(request.id, event, transaction, request.session)
         default:
             if WCEvent.eth.contains(event) {
                 try eth.handleEvent(event, topic: topic, decrypted: decrypted)
