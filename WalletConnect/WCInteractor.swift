@@ -215,13 +215,7 @@ open class WCInteractor {
               let signature = signedRequestParam.signDoc.signature else {
             return Promise<Void>()
         }
-        let result = WCIBCTransaction.ResponseResult.init(signed: signedRequestParam.signDoc,
-                                                          signature: signature)
-        let encoder = JSONEncoder()
-        guard let data = try? encoder.encode(result) else {
-            return Promise<Void>()
-        }
-        let response = JSONRPCResponse(id: id, result: result)
+        let response = JSONRPCResponse(id: id, result: signature.signature)
         return encryptAndSend(data: response.encoded)
     }
 }
