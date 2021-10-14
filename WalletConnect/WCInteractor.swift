@@ -72,11 +72,14 @@ open class WCInteractor {
     }
     public var peerMeta: WCPeerMeta?
 
-    public init(session: WCSession, meta: WCPeerMeta, uuid: UUID, sessionRequestTimeout: TimeInterval = 20) {
+    public init(session: WCSession, meta: WCPeerMeta,
+                uuid: UUID, sessionRequestTimeout: TimeInterval = 20,
+                addressRequiredCoinTypes: [WCSessionAddressRequiredCoinType]) {
         self.session = session
         self.clientId = uuid.description.lowercased()
         self.clientMeta = meta
         self.sessionRequestTimeout = sessionRequestTimeout
+        self.addressRequiredCoinTypes = addressRequiredCoinTypes
         self.state = .disconnected
 
         var request = URLRequest(url: session.bridge)
