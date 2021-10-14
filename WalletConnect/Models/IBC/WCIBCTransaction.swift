@@ -105,6 +105,7 @@ extension WCIBCTransaction {
         public let accountNumber: String
         public let body: Body
         public let authInfo: AuthInfo
+        public let signature: Signature?
     }
 
     public struct Signature: Codable {

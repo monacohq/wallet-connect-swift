@@ -205,6 +205,19 @@ open class WCInteractor {
         let response = JSONRPCErrorResponse(id: id, error: JSONRPCError(code: -32000, message: message))
         return encryptAndSend(data: response.encoded)
     }
+
+    open func approveIBCTransaction(id: Int64, signed: String) -> Promise<Void> {
+        guard let jsonData = signed.data(using: .utf8) else {
+            return Promise<Void>()
+        }
+        let decoder = JSONDecoder()
+        guard let signedRequestParam = try? decoder.decode(WCIBCTransaction.RequestParam.self, from: jsonData),
+              let signature = signedRequestParam.signDoc.signature else {
+            return Promise<Void>()
+        }
+        let response = JSONRPCResponse(id: id, result: signature.signature)
+        return encryptAndSend(data: response.encoded)
+    }
 }
 
 // MARK: internal funcs
