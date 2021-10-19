@@ -5,14 +5,14 @@
 // file LICENSE at the root of the source code distribution tree.
 
 import Foundation
-import PromiseKit
+import RxCocoa
 
 public typealias BnbSignClosure = (_ id: Int64, _ order: WCBinanceOrder) -> Void
 
 public struct WCBinanceInteractor {
     public var onSign: BnbSignClosure?
 
-    var confirmResolvers: [Int64: Resolver<WCBinanceTxConfirmParam>] = [:]
+    var confirmRelay: BehaviorRelay<(Int64, WCBinanceTxConfirmParam)?> = .init(value: nil)
 
     mutating func handleEvent(_ event: WCEvent, topic: String, decrypted: Data) throws {
         switch event {
@@ -27,8 +27,7 @@ public struct WCBinanceInteractor {
         case .bnbTransactionConfirm:
             let request: JSONRPCRequest<[WCBinanceTxConfirmParam]> = try event.decode(decrypted)
             guard !request.params.isEmpty else { throw WCError.badJSONRPCRequest }
-            self.confirmResolvers[request.id]?.fulfill(request.params[0])
-            self.confirmResolvers[request.id] = nil
+            self.confirmRelay.accept((request.id, request.params[0]))
         default:
             break
         }
