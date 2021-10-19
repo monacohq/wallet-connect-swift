@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		92DEE49638A4B026CB1A587C /* Pods_WalletConnect.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E6720F508B738D4C769CF02F /* Pods_WalletConnect.framework */; };
 		BB47674F236BB93600A9A9AF /* WalletConnect.h in Headers */ = {isa = PBXBuildFile; fileRef = BB47674D236BB93600A9A9AF /* WalletConnect.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		BB476775236BB98400A9A9AF /* WCInteractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB476755236BB98300A9A9AF /* WCInteractor.swift */; };
 		BB476776236BB98400A9A9AF /* JSONRPC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB476757236BB98300A9A9AF /* JSONRPC.swift */; };
@@ -36,6 +37,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		0B4C0EFA77293A454E806F6B /* Pods-WalletConnect.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-WalletConnect.debug.xcconfig"; path = "Target Support Files/Pods-WalletConnect/Pods-WalletConnect.debug.xcconfig"; sourceTree = "<group>"; };
 		BB47674A236BB93600A9A9AF /* WalletConnect.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = WalletConnect.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		BB47674D236BB93600A9A9AF /* WalletConnect.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = WalletConnect.h; sourceTree = "<group>"; };
 		BB47674E236BB93600A9A9AF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -65,6 +67,8 @@
 		BB476773236BB98300A9A9AF /* WCEncryptor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WCEncryptor.swift; sourceTree = "<group>"; };
 		BB476774236BB98300A9A9AF /* WCError.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WCError.swift; sourceTree = "<group>"; };
 		BB4767E9236BFDF800A9A9AF /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		E6720F508B738D4C769CF02F /* Pods_WalletConnect.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_WalletConnect.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		FC9E6D8CFDF26E5A636CD19C /* Pods-WalletConnect.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-WalletConnect.release.xcconfig"; path = "Target Support Files/Pods-WalletConnect/Pods-WalletConnect.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -72,6 +76,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				92DEE49638A4B026CB1A587C /* Pods_WalletConnect.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -85,6 +90,7 @@
 				BB47674C236BB93600A9A9AF /* WalletConnect */,
 				BB47674B236BB93600A9A9AF /* Products */,
 				BB47678E236BCCC200A9A9AF /* Frameworks */,
+				D0FDBC7DDF742FD4311955D4 /* Pods */,
 			);
 			sourceTree = "<group>";
 		};
@@ -189,8 +195,19 @@
 		BB47678E236BCCC200A9A9AF /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				E6720F508B738D4C769CF02F /* Pods_WalletConnect.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		D0FDBC7DDF742FD4311955D4 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				0B4C0EFA77293A454E806F6B /* Pods-WalletConnect.debug.xcconfig */,
+				FC9E6D8CFDF26E5A636CD19C /* Pods-WalletConnect.release.xcconfig */,
+			);
+			name = Pods;
+			path = Pods;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -211,6 +228,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = BB476752236BB93600A9A9AF /* Build configuration list for PBXNativeTarget "WalletConnect" */;
 			buildPhases = (
+				15190681D9ACDFCC0E5197BC /* [CP] Check Pods Manifest.lock */,
 				BB476745236BB93600A9A9AF /* Headers */,
 				BB476746236BB93600A9A9AF /* Sources */,
 				BB476747236BB93600A9A9AF /* Frameworks */,
@@ -267,6 +285,31 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		15190681D9ACDFCC0E5197BC /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-WalletConnect-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		BB476746236BB93600A9A9AF /* Sources */ = {
@@ -426,6 +469,7 @@
 		};
 		BB476753236BB93600A9A9AF /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 0B4C0EFA77293A454E806F6B /* Pods-WalletConnect.debug.xcconfig */;
 			buildSettings = {
 				BUILD_LIBRARY_FOR_DISTRIBUTION = NO;
 				CLANG_ENABLE_MODULES = YES;
@@ -456,6 +500,7 @@
 		};
 		BB476754236BB93600A9A9AF /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = FC9E6D8CFDF26E5A636CD19C /* Pods-WalletConnect.release.xcconfig */;
 			buildSettings = {
 				BUILD_LIBRARY_FOR_DISTRIBUTION = NO;
 				CLANG_ENABLE_MODULES = YES;
