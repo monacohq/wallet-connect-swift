@@ -6,7 +6,8 @@
 
 import Foundation
 import Starscream
-import PromiseKit
+import RxCocoa
+import RxSwift
 
 public typealias SessionRequestClosure = (_ id: Int64, _ peerParam: WCSessionRequestParam) -> Void
 public typealias SessionKilledClosure = () -> Void
@@ -25,8 +26,6 @@ public enum WCInteractorState {
 open class WCInteractor {
     public let session: WCSession
 
-    public private(set) var state: WCInteractorState
-
     public let clientId: String
     public let clientMeta: WCPeerMeta
     public private(set) var addressRequiredCoinTypes = [WCSessionAddressRequiredCoinType]()
@@ -44,9 +43,6 @@ open class WCInteractor {
     public var onError: ErrorClosure?
     public var onCustomRequest: CustomRequestClosure?
     public var onReceiveACK: ReceiveACKClosure?
-
-    // outgoing promise resolvers
-    private var connectResolver: Resolver<Bool>?
 
     private let socket: WebSocket
     private var handshakeId: Int64 = -1
@@ -72,6 +68,10 @@ open class WCInteractor {
     }
     public var peerMeta: WCPeerMeta?
 
+    // Rx
+    private var stateRelay: BehaviorRelay<WCInteractorState> = .init(value: .disconnected)
+    private let disposeBag = DisposeBag()
+
     public init(session: WCSession, meta: WCPeerMeta,
                 uuid: UUID, sessionRequestTimeout: TimeInterval = 20,
                 addressRequiredCoinTypes: [WCSessionAddressRequiredCoinType]) {
@@ -80,7 +80,6 @@ open class WCInteractor {
         self.clientMeta = meta
         self.sessionRequestTimeout = sessionRequestTimeout
         self.addressRequiredCoinTypes = addressRequiredCoinTypes
-        self.state = .disconnected
 
         var request = URLRequest(url: session.bridge)
         request.timeoutInterval = sessionRequestTimeout
@@ -91,11 +90,7 @@ open class WCInteractor {
         self.trust = WCTrustInteractor()
         self.ibc = WCIBCInteractor()
 
-        socket.onConnect = { [weak self] in self?.onConnect() }
-        socket.onDisconnect = { [weak self] error in self?.onDisconnect(error: error) }
-        socket.onText = { [weak self] text in self?.onReceiveMessage(text: text) }
-        socket.onPong = { _ in WCLog("<== pong") }
-        socket.onData = { data in WCLog("<== websocketDidReceiveData: \(data.toHexString())") }
+        socket.delegate = self
 
         WCLog("interactor init session.topic:\(session.topic) clientId:\(clientId)")
     }
@@ -104,43 +99,41 @@ open class WCInteractor {
         disconnect()
     }
 
-    open func connect() -> Promise<Bool> {
-        if socket.isConnected {
-            return Promise.value(true)
+    open func connect() -> Observable<WCInteractorState> {
+        if stateRelay.value == .connected {
+            return .just(.connected)
         }
         socket.connect()
-        state = .connecting
-        return Promise<Bool> { [weak self] seal in
-            self?.connectResolver = seal
-        }
+        stateRelay.accept(.connecting)
+
+        return stateRelay.asObservable()
     }
 
     open func pause() {
-        state = .paused
-        socket.disconnect(forceTimeout: nil, closeCode: CloseCode.goingAway.rawValue)
+        stateRelay.accept(.paused)
+        socket.disconnect(closeCode: CloseCode.goingAway.rawValue)
     }
 
     open func resume() {
         socket.connect()
-        state = .connecting
+        stateRelay.accept(.connecting)
     }
 
     open func disconnect() {
         stopTimers()
 
         socket.disconnect()
-        state = .disconnected
+        stateRelay.accept(.disconnected)
 
-        connectResolver = nil
         handshakeId = -1
     }
 
     open func approveSession(accounts: [String],
                              chainId: String,
                              selectedWalletId: String? = nil,
-                             wallets: [WCSessionWalletInfo]? = nil) -> Promise<Void> {
+                             wallets: [WCSessionWalletInfo]? = nil) -> Completable {
         guard handshakeId > 0 else {
-            return Promise(error: WCError.sessionInvalid)
+            return Completable.error(WCError.sessionInvalid)
         }
         let result = WCApproveSessionResponse(
             approved: true,
@@ -156,29 +149,40 @@ open class WCInteractor {
         return encryptAndSend(data: response.encoded)
     }
 
-    open func rejectSession(_ message: String = "Session Rejected") -> Promise<Void> {
+    open func rejectSession(_ message: String = "Session Rejected") -> Completable {
         guard handshakeId > 0 else {
-            return Promise(error: WCError.sessionInvalid)
+            return Completable.error(WCError.sessionInvalid)
         }
         let response = JSONRPCErrorResponse(id: handshakeId, error: JSONRPCError(code: -32000, message: message))
         return encryptAndSend(data: response.encoded)
     }
 
     @discardableResult
-    open func killSession(method: WCEvent) -> Promise<Void> {
+    open func killSession(method: WCEvent) -> Completable {
         let result = WCSessionUpdateParam(approved: false, chainId: nil, accounts: nil)
         let response = JSONRPCRequest(id: generateId(), method: method.rawValue, params: [result])
-        return encryptAndSend(data: response.encoded)
-            .map { [weak self] in
-                self?.onSessionKilled?()
-                self?.disconnect()
-            }
+        let bag = disposeBag
+
+        return Completable.create { [weak self] completable in
+            self?.encryptAndSend(data: response.encoded).subscribe(
+                onCompleted: {
+                    self?.onSessionKilled?()
+                    self?.disconnect()
+                    completable(.completed)
+                },
+                onError: { error in
+                    completable(.error(error))
+                })
+                .disposed(by: bag)
+
+            return Disposables.create()
+        }
     }
-    
+
     open func updateSession(chainId: String, accounts: [String],
                             method: WCEvent,
                             selectedWalletId: String? = nil,
-                            wallets: [WCSessionWalletInfo]? = nil) -> Promise<Void> {
+                            wallets: [WCSessionWalletInfo]? = nil) -> Completable {
         let result = WCSessionUpdateParam(approved: true,
                                           chainId: chainId,
                                           accounts: accounts,
@@ -189,34 +193,33 @@ open class WCInteractor {
         return encryptAndSend(data: response.encoded)
     }
 
-    open func approveBnbOrder(id: Int64, signed: WCBinanceOrderSignature) -> Promise<WCBinanceTxConfirmParam> {
-        let result = signed.encodedString
-        return approveRequest(id: id, result: result)
-            .then { _ -> Promise<WCBinanceTxConfirmParam> in
-                return Promise { [weak self] seal in
-                    self?.bnb.confirmResolvers[id] = seal
-                }
-            }
-    }
+//    open func approveBnbOrder(id: Int64, signed: WCBinanceOrderSignature) -> Promise<WCBinanceTxConfirmParam> {
+//        let result = signed.encodedString
+//        return approveRequest(id: id, result: result)
+//            .then { _ -> Promise<WCBinanceTxConfirmParam> in
+//                return Promise { [weak self] seal in
+//                    self?.bnb.confirmResolvers[id] = seal
+//                }
+//            }
+//    }
 
-    open func approveRequest<T: Codable>(id: Int64, result: T) -> Promise<Void> {
+    open func approveRequest<T: Codable>(id: Int64, result: T) -> Completable {
         let response = JSONRPCResponse(id: id, result: result)
         return encryptAndSend(data: response.encoded)
     }
 
-    open func rejectRequest(id: Int64, message: String) -> Promise<Void> {
+    open func rejectRequest(id: Int64, message: String) -> Completable {
         let response = JSONRPCErrorResponse(id: id, error: JSONRPCError(code: -32000, message: message))
         return encryptAndSend(data: response.encoded)
     }
 
-    open func approveIBCTransaction(id: Int64, signed: String) -> Promise<Void> {
+    open func approveIBCTransaction(id: Int64, signed: String) -> Completable {
         guard let jsonData = signed.data(using: .utf8) else {
-            return Promise<Void>()
+            return Completable.error(WCError.unknown) // TODO: unknown maybe not good enough
         }
         let decoder = JSONDecoder()
-        guard let signedRequestParam = try? decoder.decode(WCIBCTransaction.RequestParam.self, from: jsonData),
-              let signature = signedRequestParam.signDoc.signature else {
-            return Promise<Void>()
+        guard let signedRequestParam = try? decoder.decode(WCIBCTransaction.RequestParam.self, from: jsonData), let signature = signedRequestParam.signDoc.signature else {
+            return Completable.error(WCError.unknown) // TODO: unknown maybe not good enough
         }
         let response = JSONRPCResponse(id: id, result: signature.signature)
         return encryptAndSend(data: response.encoded)
@@ -244,18 +247,21 @@ extension WCInteractor {
         subscritionLock.unlock()
     }
 
-    private func encryptAndSend(data: Data) -> Promise<Void> {
+    private func encryptAndSend(data: Data) -> Completable {
         WCLog("==> encrypt: \(String(data: data, encoding: .utf8)!) ")
         let encoder = JSONEncoder()
         let payload = try! WCEncryptor.encrypt(data: data, with: session.key)
         let payloadString = encoder.encodeAsUTF8(payload)
         let message = WCSocketMessage(topic: peerId ?? session.topic, type: .pub, payload: payloadString, timestamp: nil)
         let data = message.encoded
-        return Promise { seal in
-            socket.write(data: data) {
+
+        return Completable.create { [weak self] completable in
+            self?.socket.write(data: data) {
                 WCLog("==> sent \(String(data: data, encoding: .utf8)!) ")
-                seal.fulfill(())
+                completable(.completed)
             }
+            // TODO: Should the completable emits an Error ?? and how ??
+            return Disposables.create()
         }
     }
 
@@ -298,7 +304,7 @@ extension WCInteractor {
 
     private func setupPingTimer() {
         pingTimer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { [weak socket] _ in
-            WCLog("==> ping")
+            // WCLog("==> ping")
             socket?.write(ping: Data())
         }
     }
@@ -330,35 +336,16 @@ extension WCInteractor {
 // MARK: WebSocket event handler
 extension WCInteractor {
     private func onConnect() {
-        WCLog("<== websocketDidConnect")
-
         setupPingTimer()
         checkExistingSession()
 
         subscribe(topic: session.topic)
         subscribe(topic: clientId)
-
-        connectResolver?.fulfill(true)
-        connectResolver = nil
-
-        state = .connected
     }
 
     private func onDisconnect(error: Error?) {
-        WCLog("<== websocketDidDisconnect, error: \(error.debugDescription)")
-
         stopTimers()
-
-        if let error = error {
-            connectResolver?.reject(error)
-        } else {
-            connectResolver?.fulfill(false)
-        }
-
-        connectResolver = nil
         onDisconnect?(error)
-
-        state = .disconnected
     }
 
     private func onReceiveMessage(text: String) {
@@ -399,5 +386,39 @@ extension WCInteractor {
         case plain
         case rawMessage(topic: String, payload: WCEncryptionPayload?,
                         timestamp: UInt64?)
+    }
+}
+
+extension WCInteractor: WebSocketDelegate {
+    public func didReceive(event: WebSocketEvent, client: WebSocket) {
+        switch event {
+        case .connected(let headers):
+            WCLog("<== websocketDidConnected:\n\(headers)")
+            stateRelay.accept(.connected)
+            onConnect()
+        case .disconnected(let reason, let code):
+            WCLog("<== websocketDidDisconnected:\n\(reason) with code: \(code)")
+            stateRelay.accept(.disconnected)
+            onDisconnect(error: nil)
+        case .text(let text):
+            onReceiveMessage(text: text)
+        case .binary(let data):
+            WCLog("<== websocketDidReceiveData:\n\(data.toHexString())")
+        case .pong:
+            WCLog("<== pong")
+        case .ping:
+            WCLog("==> ping")
+        case .error(let error):
+            let errorDescription = error?.localizedDescription ?? "unknown"
+            WCLog("<== websocketDidDisconnected:\nerror:\(errorDescription)")
+            stateRelay.accept(.disconnected)
+            onDisconnect(error: error)
+        case .viabilityChanged(let bool):
+            WCLog("<== websocketViabilityChanged: \(bool)")
+        case .reconnectSuggested(let bool):
+            WCLog("<== websocketReconnectSuggested: \(bool)")
+        case .cancelled:
+            WCLog("<== websocketDidCancelled")
+        }
     }
 }
