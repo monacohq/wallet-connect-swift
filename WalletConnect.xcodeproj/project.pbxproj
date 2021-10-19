@@ -64,7 +64,6 @@
 		BB476772236BB98300A9A9AF /* WCSession.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WCSession.swift; sourceTree = "<group>"; };
 		BB476773236BB98300A9A9AF /* WCEncryptor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WCEncryptor.swift; sourceTree = "<group>"; };
 		BB476774236BB98300A9A9AF /* WCError.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WCError.swift; sourceTree = "<group>"; };
-		BB476799236BD18100A9A9AF /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
 		BB4767E9236BFDF800A9A9AF /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -83,7 +82,6 @@
 			isa = PBXGroup;
 			children = (
 				BB4767E9236BFDF800A9A9AF /* README.md */,
-				BB476799236BD18100A9A9AF /* Package.swift */,
 				BB47674C236BB93600A9A9AF /* WalletConnect */,
 				BB47674B236BB93600A9A9AF /* Products */,
 				BB47678E236BCCC200A9A9AF /* Frameworks */,
