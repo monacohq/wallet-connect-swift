@@ -34,6 +34,9 @@
 		BB47678B236BB98400A9A9AF /* WCSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB476772236BB98300A9A9AF /* WCSession.swift */; };
 		BB47678C236BB98400A9A9AF /* WCEncryptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB476773236BB98300A9A9AF /* WCEncryptor.swift */; };
 		BB47678D236BB98400A9A9AF /* WCError.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB476774236BB98300A9A9AF /* WCError.swift */; };
+		D164FB96271F4FC000B1643D /* WCIBCTransaction.swift in Sources */ = {isa = PBXBuildFile; fileRef = D164FB95271F4FC000B1643D /* WCIBCTransaction.swift */; };
+		D164FB98271F516300B1643D /* AnyDecodable.swift in Sources */ = {isa = PBXBuildFile; fileRef = D164FB97271F516200B1643D /* AnyDecodable.swift */; };
+		D1A93512271F48FB00ACE52F /* WCIBCInteractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A93511271F48FB00ACE52F /* WCIBCInteractor.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -67,6 +70,9 @@
 		BB476773236BB98300A9A9AF /* WCEncryptor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WCEncryptor.swift; sourceTree = "<group>"; };
 		BB476774236BB98300A9A9AF /* WCError.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WCError.swift; sourceTree = "<group>"; };
 		BB4767E9236BFDF800A9A9AF /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		D164FB95271F4FC000B1643D /* WCIBCTransaction.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WCIBCTransaction.swift; sourceTree = "<group>"; };
+		D164FB97271F516200B1643D /* AnyDecodable.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AnyDecodable.swift; sourceTree = "<group>"; };
+		D1A93511271F48FB00ACE52F /* WCIBCInteractor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WCIBCInteractor.swift; sourceTree = "<group>"; };
 		E6720F508B738D4C769CF02F /* Pods_WalletConnect.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_WalletConnect.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		FC9E6D8CFDF26E5A636CD19C /* Pods-WalletConnect.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-WalletConnect.release.xcconfig"; path = "Target Support Files/Pods-WalletConnect/Pods-WalletConnect.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -132,6 +138,7 @@
 		BB476759236BB98300A9A9AF /* SubInteractor */ = {
 			isa = PBXGroup;
 			children = (
+				D1A93511271F48FB00ACE52F /* WCIBCInteractor.swift */,
 				BB47675A236BB98300A9A9AF /* WCBinanceInteractor.swift */,
 				BB47675B236BB98300A9A9AF /* WCTrustInteractor.swift */,
 				BB47675C236BB98300A9A9AF /* WCEthereumInteractor.swift */,
@@ -146,6 +153,7 @@
 				BB47675F236BB98300A9A9AF /* WCSessionModels.swift */,
 				BB476760236BB98300A9A9AF /* WCPeerMeta.swift */,
 				BB476761236BB98300A9A9AF /* WCSocketMessage.swift */,
+				D164FB94271F4FC000B1643D /* IBC */,
 				BB476762236BB98300A9A9AF /* Trust */,
 				BB476765236BB98300A9A9AF /* Ethereum */,
 				BB476768236BB98300A9A9AF /* Binance */,
@@ -165,6 +173,7 @@
 		BB476765236BB98300A9A9AF /* Ethereum */ = {
 			isa = PBXGroup;
 			children = (
+				D164FB97271F516200B1643D /* AnyDecodable.swift */,
 				BB476766236BB98300A9A9AF /* WCEthereumSignPayload.swift */,
 				BB476767236BB98300A9A9AF /* WCEthereumTransaction.swift */,
 			);
@@ -206,8 +215,15 @@
 				0B4C0EFA77293A454E806F6B /* Pods-WalletConnect.debug.xcconfig */,
 				FC9E6D8CFDF26E5A636CD19C /* Pods-WalletConnect.release.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
+			sourceTree = "<group>";
+		};
+		D164FB94271F4FC000B1643D /* IBC */ = {
+			isa = PBXGroup;
+			children = (
+				D164FB95271F4FC000B1643D /* WCIBCTransaction.swift */,
+			);
+			path = IBC;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -325,8 +341,10 @@
 				BB476786236BB98400A9A9AF /* WCBinanceTradeOrder.swift in Sources */,
 				BB476781236BB98400A9A9AF /* WCEthereumSignPayload.swift in Sources */,
 				BB476785236BB98400A9A9AF /* WCBinanceOrder.swift in Sources */,
+				D1A93512271F48FB00ACE52F /* WCIBCInteractor.swift in Sources */,
 				BB47678B236BB98400A9A9AF /* WCSession.swift in Sources */,
 				BB476775236BB98400A9A9AF /* WCInteractor.swift in Sources */,
+				D164FB98271F516300B1643D /* AnyDecodable.swift in Sources */,
 				BB476783236BB98400A9A9AF /* WCBinanceTradePair.swift in Sources */,
 				BB47677B236BB98400A9A9AF /* WCEvent.swift in Sources */,
 				BB476788236BB98400A9A9AF /* Data+Hex.swift in Sources */,
@@ -335,6 +353,7 @@
 				BB47677F236BB98400A9A9AF /* WCTrustAccount.swift in Sources */,
 				BB47677A236BB98400A9A9AF /* WCEthereumInteractor.swift in Sources */,
 				BB476779236BB98400A9A9AF /* WCTrustInteractor.swift in Sources */,
+				D164FB96271F4FC000B1643D /* WCIBCTransaction.swift in Sources */,
 				BB476789236BB98400A9A9AF /* Encodable+Extension.swift in Sources */,
 				BB476778236BB98400A9A9AF /* WCBinanceInteractor.swift in Sources */,
 				BB476777236BB98400A9A9AF /* WCSessionStore.swift in Sources */,
@@ -405,6 +424,7 @@
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
 			};
@@ -461,6 +481,7 @@
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
 				VALIDATE_PRODUCT = YES;
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
