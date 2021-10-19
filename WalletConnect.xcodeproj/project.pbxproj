@@ -33,9 +33,6 @@
 		BB47678B236BB98400A9A9AF /* WCSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB476772236BB98300A9A9AF /* WCSession.swift */; };
 		BB47678C236BB98400A9A9AF /* WCEncryptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB476773236BB98300A9A9AF /* WCEncryptor.swift */; };
 		BB47678D236BB98400A9A9AF /* WCError.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB476774236BB98300A9A9AF /* WCError.swift */; };
-		BB476792236BCCC300A9A9AF /* Starscream.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BB47678F236BCCC300A9A9AF /* Starscream.framework */; };
-		BB476794236BCCC300A9A9AF /* PromiseKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BB476790236BCCC300A9A9AF /* PromiseKit.framework */; };
-		BB476796236BCCC300A9A9AF /* CryptoSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BB476791236BCCC300A9A9AF /* CryptoSwift.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -67,9 +64,6 @@
 		BB476772236BB98300A9A9AF /* WCSession.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WCSession.swift; sourceTree = "<group>"; };
 		BB476773236BB98300A9A9AF /* WCEncryptor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WCEncryptor.swift; sourceTree = "<group>"; };
 		BB476774236BB98300A9A9AF /* WCError.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WCError.swift; sourceTree = "<group>"; };
-		BB47678F236BCCC300A9A9AF /* Starscream.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Starscream.framework; path = Carthage/Build/iOS/Starscream.framework; sourceTree = "<group>"; };
-		BB476790236BCCC300A9A9AF /* PromiseKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = PromiseKit.framework; path = Carthage/Build/iOS/PromiseKit.framework; sourceTree = "<group>"; };
-		BB476791236BCCC300A9A9AF /* CryptoSwift.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CryptoSwift.framework; path = Carthage/Build/iOS/CryptoSwift.framework; sourceTree = "<group>"; };
 		BB476799236BD18100A9A9AF /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
 		BB4767E9236BFDF800A9A9AF /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -79,9 +73,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BB476796236BCCC300A9A9AF /* CryptoSwift.framework in Frameworks */,
-				BB476792236BCCC300A9A9AF /* Starscream.framework in Frameworks */,
-				BB476794236BCCC300A9A9AF /* PromiseKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -200,9 +191,6 @@
 		BB47678E236BCCC200A9A9AF /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				BB476791236BCCC300A9A9AF /* CryptoSwift.framework */,
-				BB476790236BCCC300A9A9AF /* PromiseKit.framework */,
-				BB47678F236BCCC300A9A9AF /* Starscream.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
