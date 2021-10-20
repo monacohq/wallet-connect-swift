@@ -99,14 +99,30 @@ open class WCInteractor {
         disconnect()
     }
 
-    open func connect() -> Observable<WCInteractorState> {
-        if stateRelay.value == .connected {
-            return .just(.connected)
-        }
-        socket.connect()
-        stateRelay.accept(.connecting)
+    open func connect() -> Completable {
+        let bag = disposeBag
 
-        return stateRelay.asObservable()
+        return Completable.create { [weak self] completable in
+            if self?.stateRelay.value == .connected {
+                completable(.completed)
+            }
+            
+            self?.socket.connect()
+            self?.stateRelay.accept(.connecting)
+
+            let timer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { _ in
+                completable(.error(WCError.sessionRequestTimeout))
+            }
+
+            self?.stateRelay.subscribe(onNext: { state in
+                if state == .connected {
+                    completable(.completed)
+                    timer.invalidate()
+                }
+            })
+
+            return Disposables.create()
+        }
     }
 
     open func pause() {
@@ -256,11 +272,16 @@ extension WCInteractor {
         let data = message.encoded
 
         return Completable.create { [weak self] completable in
+            let timer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { _ in
+                completable(.error(WCError.sessionRequestTimeout))
+            }
+
             self?.socket.write(data: data) {
                 WCLog("==> sent \(String(data: data, encoding: .utf8)!) ")
+                timer.invalidate()
                 completable(.completed)
             }
-            // TODO: Should the completable emits an Error ?? and how ??
+
             return Disposables.create()
         }
     }
