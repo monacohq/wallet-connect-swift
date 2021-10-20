@@ -45,6 +45,7 @@ open class WCInteractor {
     public var onReceiveACK: ReceiveACKClosure?
 
     private let socket: WebSocket
+    private let maxReconnectCount: Int = 3
     private var handshakeId: Int64 = -1
     private weak var pingTimer: Timer?
     private weak var sessionTimer: Timer?
@@ -438,10 +439,20 @@ extension WCInteractor: WebSocketDelegate {
         case .ping:
             WCLog("==> ping")
         case .error(let error):
-            let errorDescription = error?.localizedDescription ?? "unknown"
-            WCLog("<== websocketDidDisconnected:\nerror:\(errorDescription)")
-            stateRelay.accept(.disconnected)
-            onDisconnect(error: error)
+            let reconnectCount = self.maxReconnectCount
+            let bag = self.disposeBag
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                self.connect().retry(reconnectCount)
+                    .subscribe(onCompleted: {
+                        WCLog("websocketDidReconnected")
+                    }, onError: { [weak self] _ in
+                        let errorDescription = error?.localizedDescription ?? "unknown"
+                        WCLog("<== websocketDidDisconnected:\nerror:\(errorDescription)")
+                        self?.stateRelay.accept(.disconnected)
+                        self?.onDisconnect(error: error)
+                    }).disposed(by: bag)
+            }
         case .viabilityChanged(let bool):
             WCLog("<== websocketViabilityChanged: \(bool)")
         case .reconnectSuggested(let bool):
