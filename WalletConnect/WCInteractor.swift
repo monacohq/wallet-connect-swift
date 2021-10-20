@@ -123,7 +123,7 @@ open class WCInteractor {
                     completable(.completed)
                     timer.invalidate()
                 }
-            })
+            }).disposed(by: bag)
 
             return Disposables.create()
         }
