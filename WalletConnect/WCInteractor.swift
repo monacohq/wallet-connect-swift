@@ -69,7 +69,7 @@ open class WCInteractor {
     public var peerMeta: WCPeerMeta?
 
     // Rx
-    private var stateRelay: BehaviorRelay<WCInteractorState> = .init(value: .disconnected)
+    private var stateRelay: BehaviorRelay<WCInteractorState>
     private let disposeBag = DisposeBag()
 
     public var state: WCInteractorState {
@@ -87,7 +87,10 @@ open class WCInteractor {
 
         var request = URLRequest(url: session.bridge)
         request.timeoutInterval = sessionRequestTimeout
-        self.socket = WebSocket(request: request)
+        let pinner = FoundationSecurity(allowSelfSigned: true) // don't validate SSL certificates
+
+        self.socket = WebSocket(request: request, certPinner: pinner)
+        self.stateRelay = .init(value: .disconnected)
 
         self.eth = WCEthereumInteractor()
         self.bnb = WCBinanceInteractor()
