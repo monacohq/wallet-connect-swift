@@ -72,6 +72,10 @@ open class WCInteractor {
     private var stateRelay: BehaviorRelay<WCInteractorState> = .init(value: .disconnected)
     private let disposeBag = DisposeBag()
 
+    public var state: WCInteractorState {
+        return stateRelay.value
+    }
+
     public init(session: WCSession, meta: WCPeerMeta,
                 uuid: UUID, sessionRequestTimeout: TimeInterval = 20,
                 addressRequiredCoinTypes: [WCSessionAddressRequiredCoinType]) {
@@ -195,6 +199,7 @@ open class WCInteractor {
         }
     }
 
+    @discardableResult
     open func updateSession(chainId: String, accounts: [String],
                             method: WCEvent,
                             selectedWalletId: String? = nil,
