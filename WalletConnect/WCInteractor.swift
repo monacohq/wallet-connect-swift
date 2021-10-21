@@ -455,6 +455,8 @@ extension WCInteractor: WebSocketDelegate {
     }
 
     private func reconnect() {
+        guard state != .connecting && state != .connected else { return }
+
         let reconnectCount = self.maxReconnectCount
         let bag = self.disposeBag
 
