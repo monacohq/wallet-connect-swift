@@ -88,7 +88,7 @@ open class WCInteractor {
 
         var request = URLRequest(url: session.bridge)
         request.timeoutInterval = sessionRequestTimeout
-        let pinner = FoundationSecurity(allowSelfSigned: true) // don't validate SSL certificates
+        let pinner = FoundationSecurity(allowSelfSigned: true)
 
         self.socket = WebSocket(request: request, certPinner: pinner)
         self.stateRelay = .init(value: .disconnected)
@@ -445,10 +445,9 @@ extension WCInteractor: WebSocketDelegate {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 self.connect().retry(reconnectCount)
                     .subscribe(onCompleted: {
-                        WCLog("websocketDidReconnected")
+                        WCLog("<== websocketDidReconnected")
                     }, onError: { [weak self] _ in
-                        let errorDescription = error?.localizedDescription ?? "unknown"
-                        WCLog("<== websocketDidDisconnected:\nerror:\(errorDescription)")
+                        WCLog("<== websocketDidDisconnected:\nerror:\(error.debugDescription)")
                         self?.stateRelay.accept(.disconnected)
                         self?.onDisconnect(error: error)
                     }).disposed(by: bag)
