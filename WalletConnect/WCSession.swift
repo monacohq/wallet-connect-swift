@@ -8,7 +8,8 @@ import Foundation
 import CryptoSwift
 
 public struct WCSession: Codable, Equatable {
-    public static let deprecatedExtensionVersion = 1.0
+    public static let deprecatedExtensionVersion = 1.0 // will be unavailable
+    public static let supportedExtensionVersions = [1.0, 2.0] // currently available
     public let topic: String
     public let version: String
     public let bridge: URL
