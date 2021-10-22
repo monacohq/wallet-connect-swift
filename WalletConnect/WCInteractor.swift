@@ -419,6 +419,14 @@ extension WCInteractor: WebSocketDelegate {
             onConnect()
         case .disconnected(let reason, let code):
             WCLog("<== websocketDidDisconnected:\n\(reason) with code: \(code)")
+
+            if code == 4022 {
+                let error = WCError.tooManyMessages(desc: reason)
+                onDisconnect(error: error)
+                stateRelay.accept(.disconnected)
+                return
+            }
+
             stateRelay.accept(.disconnected)
             onDisconnect(error: nil)
         case .text(let text):
