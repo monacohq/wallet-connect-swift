@@ -108,24 +108,26 @@ open class WCInteractor {
     }
 
     open func connect() -> Completable {
-        let bag = disposeBag
+        let websocket = self.socket
+        let stateRelay = self.stateRelay
+        let bag = self.disposeBag
 
-        return Completable.create { [weak self] completable in
-            if self?.stateRelay.value == .connected {
+        return Completable.create { completable in
+            if stateRelay.value == .connected {
                 completable(.completed)
             }
-            
-            self?.socket.connect()
-            self?.stateRelay.accept(.connecting)
+
+            stateRelay.accept(.connecting)
+            websocket.connect()
 
             let timer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { _ in
                 completable(.error(WCError.sessionRequestTimeout))
             }
 
-            self?.stateRelay.subscribe(onNext: { state in
+            stateRelay.subscribe(onNext: { state in
                 if state == .connected {
-                    completable(.completed)
                     timer.invalidate()
+                    completable(.completed)
                 }
             }).disposed(by: bag)
 
@@ -140,7 +142,6 @@ open class WCInteractor {
 
     open func resume() {
         socket.connect()
-        stateRelay.accept(.connecting)
     }
 
     open func disconnect() {
@@ -465,9 +466,9 @@ extension WCInteractor: WebSocketDelegate {
                 .subscribe(onCompleted: {
                     WCLog("<== websocketDidReconnected")
                 }, onError: { [weak self] error in
+                    WCLog("<== websocketFailedToReconnect:\nerror:\(error.localizedDescription)")
                     self?.stateRelay.accept(.disconnected)
                     self?.onDisconnect(error: error)
-                    WCLog("<== websocketFailedToReconnect:\nerror:\(error.localizedDescription)")
                 }).disposed(by: bag)
         }
     }
