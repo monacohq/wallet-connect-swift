@@ -427,8 +427,7 @@ extension WCInteractor: WebSocketDelegate {
                 return
             }
 
-            stateRelay.accept(.disconnected)
-            onDisconnect(error: nil)
+            reconnect()
         case .text(let text):
             onReceiveMessage(text: text)
         case .binary(let data):
@@ -448,7 +447,10 @@ extension WCInteractor: WebSocketDelegate {
             }
             WCLog("<== websocketReconnectSuggested: \(shouldReconnect)")
         case .cancelled:
+            // disconnection triggered by users
             WCLog("<== websocketDidCancelled")
+            stateRelay.accept(.disconnected)
+            onDisconnect(error: nil)
         }
     }
 
