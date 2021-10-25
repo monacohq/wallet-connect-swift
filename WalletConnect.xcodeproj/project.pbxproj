@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		92DEE49638A4B026CB1A587C /* Pods_WalletConnect.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E6720F508B738D4C769CF02F /* Pods_WalletConnect.framework */; };
 		BB47674F236BB93600A9A9AF /* WalletConnect.h in Headers */ = {isa = PBXBuildFile; fileRef = BB47674D236BB93600A9A9AF /* WalletConnect.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		BB476775236BB98400A9A9AF /* WCInteractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB476755236BB98300A9A9AF /* WCInteractor.swift */; };
 		BB476776236BB98400A9A9AF /* JSONRPC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB476757236BB98300A9A9AF /* JSONRPC.swift */; };
@@ -33,12 +34,13 @@
 		BB47678B236BB98400A9A9AF /* WCSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB476772236BB98300A9A9AF /* WCSession.swift */; };
 		BB47678C236BB98400A9A9AF /* WCEncryptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB476773236BB98300A9A9AF /* WCEncryptor.swift */; };
 		BB47678D236BB98400A9A9AF /* WCError.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB476774236BB98300A9A9AF /* WCError.swift */; };
-		BB476792236BCCC300A9A9AF /* Starscream.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BB47678F236BCCC300A9A9AF /* Starscream.framework */; };
-		BB476794236BCCC300A9A9AF /* PromiseKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BB476790236BCCC300A9A9AF /* PromiseKit.framework */; };
-		BB476796236BCCC300A9A9AF /* CryptoSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BB476791236BCCC300A9A9AF /* CryptoSwift.framework */; };
+		D164FB96271F4FC000B1643D /* WCIBCTransaction.swift in Sources */ = {isa = PBXBuildFile; fileRef = D164FB95271F4FC000B1643D /* WCIBCTransaction.swift */; };
+		D164FB98271F516300B1643D /* AnyDecodable.swift in Sources */ = {isa = PBXBuildFile; fileRef = D164FB97271F516200B1643D /* AnyDecodable.swift */; };
+		D1A93512271F48FB00ACE52F /* WCIBCInteractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A93511271F48FB00ACE52F /* WCIBCInteractor.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		0B4C0EFA77293A454E806F6B /* Pods-WalletConnect.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-WalletConnect.debug.xcconfig"; path = "Target Support Files/Pods-WalletConnect/Pods-WalletConnect.debug.xcconfig"; sourceTree = "<group>"; };
 		BB47674A236BB93600A9A9AF /* WalletConnect.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = WalletConnect.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		BB47674D236BB93600A9A9AF /* WalletConnect.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = WalletConnect.h; sourceTree = "<group>"; };
 		BB47674E236BB93600A9A9AF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -67,11 +69,12 @@
 		BB476772236BB98300A9A9AF /* WCSession.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WCSession.swift; sourceTree = "<group>"; };
 		BB476773236BB98300A9A9AF /* WCEncryptor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WCEncryptor.swift; sourceTree = "<group>"; };
 		BB476774236BB98300A9A9AF /* WCError.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WCError.swift; sourceTree = "<group>"; };
-		BB47678F236BCCC300A9A9AF /* Starscream.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Starscream.framework; path = Carthage/Build/iOS/Starscream.framework; sourceTree = "<group>"; };
-		BB476790236BCCC300A9A9AF /* PromiseKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = PromiseKit.framework; path = Carthage/Build/iOS/PromiseKit.framework; sourceTree = "<group>"; };
-		BB476791236BCCC300A9A9AF /* CryptoSwift.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CryptoSwift.framework; path = Carthage/Build/iOS/CryptoSwift.framework; sourceTree = "<group>"; };
-		BB476799236BD18100A9A9AF /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
 		BB4767E9236BFDF800A9A9AF /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		D164FB95271F4FC000B1643D /* WCIBCTransaction.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WCIBCTransaction.swift; sourceTree = "<group>"; };
+		D164FB97271F516200B1643D /* AnyDecodable.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AnyDecodable.swift; sourceTree = "<group>"; };
+		D1A93511271F48FB00ACE52F /* WCIBCInteractor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WCIBCInteractor.swift; sourceTree = "<group>"; };
+		E6720F508B738D4C769CF02F /* Pods_WalletConnect.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_WalletConnect.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		FC9E6D8CFDF26E5A636CD19C /* Pods-WalletConnect.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-WalletConnect.release.xcconfig"; path = "Target Support Files/Pods-WalletConnect/Pods-WalletConnect.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -79,9 +82,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BB476796236BCCC300A9A9AF /* CryptoSwift.framework in Frameworks */,
-				BB476792236BCCC300A9A9AF /* Starscream.framework in Frameworks */,
-				BB476794236BCCC300A9A9AF /* PromiseKit.framework in Frameworks */,
+				92DEE49638A4B026CB1A587C /* Pods_WalletConnect.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -92,10 +93,10 @@
 			isa = PBXGroup;
 			children = (
 				BB4767E9236BFDF800A9A9AF /* README.md */,
-				BB476799236BD18100A9A9AF /* Package.swift */,
 				BB47674C236BB93600A9A9AF /* WalletConnect */,
 				BB47674B236BB93600A9A9AF /* Products */,
 				BB47678E236BCCC200A9A9AF /* Frameworks */,
+				D0FDBC7DDF742FD4311955D4 /* Pods */,
 			);
 			sourceTree = "<group>";
 		};
@@ -137,6 +138,7 @@
 		BB476759236BB98300A9A9AF /* SubInteractor */ = {
 			isa = PBXGroup;
 			children = (
+				D1A93511271F48FB00ACE52F /* WCIBCInteractor.swift */,
 				BB47675A236BB98300A9A9AF /* WCBinanceInteractor.swift */,
 				BB47675B236BB98300A9A9AF /* WCTrustInteractor.swift */,
 				BB47675C236BB98300A9A9AF /* WCEthereumInteractor.swift */,
@@ -151,6 +153,7 @@
 				BB47675F236BB98300A9A9AF /* WCSessionModels.swift */,
 				BB476760236BB98300A9A9AF /* WCPeerMeta.swift */,
 				BB476761236BB98300A9A9AF /* WCSocketMessage.swift */,
+				D164FB94271F4FC000B1643D /* IBC */,
 				BB476762236BB98300A9A9AF /* Trust */,
 				BB476765236BB98300A9A9AF /* Ethereum */,
 				BB476768236BB98300A9A9AF /* Binance */,
@@ -170,6 +173,7 @@
 		BB476765236BB98300A9A9AF /* Ethereum */ = {
 			isa = PBXGroup;
 			children = (
+				D164FB97271F516200B1643D /* AnyDecodable.swift */,
 				BB476766236BB98300A9A9AF /* WCEthereumSignPayload.swift */,
 				BB476767236BB98300A9A9AF /* WCEthereumTransaction.swift */,
 			);
@@ -200,11 +204,26 @@
 		BB47678E236BCCC200A9A9AF /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				BB476791236BCCC300A9A9AF /* CryptoSwift.framework */,
-				BB476790236BCCC300A9A9AF /* PromiseKit.framework */,
-				BB47678F236BCCC300A9A9AF /* Starscream.framework */,
+				E6720F508B738D4C769CF02F /* Pods_WalletConnect.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		D0FDBC7DDF742FD4311955D4 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				0B4C0EFA77293A454E806F6B /* Pods-WalletConnect.debug.xcconfig */,
+				FC9E6D8CFDF26E5A636CD19C /* Pods-WalletConnect.release.xcconfig */,
+			);
+			path = Pods;
+			sourceTree = "<group>";
+		};
+		D164FB94271F4FC000B1643D /* IBC */ = {
+			isa = PBXGroup;
+			children = (
+				D164FB95271F4FC000B1643D /* WCIBCTransaction.swift */,
+			);
+			path = IBC;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -225,6 +244,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = BB476752236BB93600A9A9AF /* Build configuration list for PBXNativeTarget "WalletConnect" */;
 			buildPhases = (
+				15190681D9ACDFCC0E5197BC /* [CP] Check Pods Manifest.lock */,
 				BB476745236BB93600A9A9AF /* Headers */,
 				BB476746236BB93600A9A9AF /* Sources */,
 				BB476747236BB93600A9A9AF /* Frameworks */,
@@ -282,6 +302,31 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		15190681D9ACDFCC0E5197BC /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-WalletConnect-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		BB476746236BB93600A9A9AF /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -296,8 +341,10 @@
 				BB476786236BB98400A9A9AF /* WCBinanceTradeOrder.swift in Sources */,
 				BB476781236BB98400A9A9AF /* WCEthereumSignPayload.swift in Sources */,
 				BB476785236BB98400A9A9AF /* WCBinanceOrder.swift in Sources */,
+				D1A93512271F48FB00ACE52F /* WCIBCInteractor.swift in Sources */,
 				BB47678B236BB98400A9A9AF /* WCSession.swift in Sources */,
 				BB476775236BB98400A9A9AF /* WCInteractor.swift in Sources */,
+				D164FB98271F516300B1643D /* AnyDecodable.swift in Sources */,
 				BB476783236BB98400A9A9AF /* WCBinanceTradePair.swift in Sources */,
 				BB47677B236BB98400A9A9AF /* WCEvent.swift in Sources */,
 				BB476788236BB98400A9A9AF /* Data+Hex.swift in Sources */,
@@ -306,6 +353,7 @@
 				BB47677F236BB98400A9A9AF /* WCTrustAccount.swift in Sources */,
 				BB47677A236BB98400A9A9AF /* WCEthereumInteractor.swift in Sources */,
 				BB476779236BB98400A9A9AF /* WCTrustInteractor.swift in Sources */,
+				D164FB96271F4FC000B1643D /* WCIBCTransaction.swift in Sources */,
 				BB476789236BB98400A9A9AF /* Encodable+Extension.swift in Sources */,
 				BB476778236BB98400A9A9AF /* WCBinanceInteractor.swift in Sources */,
 				BB476777236BB98400A9A9AF /* WCSessionStore.swift in Sources */,
@@ -376,6 +424,7 @@
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
 			};
@@ -432,6 +481,7 @@
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
 				VALIDATE_PRODUCT = YES;
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
@@ -440,6 +490,7 @@
 		};
 		BB476753236BB93600A9A9AF /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 0B4C0EFA77293A454E806F6B /* Pods-WalletConnect.debug.xcconfig */;
 			buildSettings = {
 				BUILD_LIBRARY_FOR_DISTRIBUTION = NO;
 				CLANG_ENABLE_MODULES = YES;
@@ -470,6 +521,7 @@
 		};
 		BB476754236BB93600A9A9AF /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = FC9E6D8CFDF26E5A636CD19C /* Pods-WalletConnect.release.xcconfig */;
 			buildSettings = {
 				BUILD_LIBRARY_FOR_DISTRIBUTION = NO;
 				CLANG_ENABLE_MODULES = YES;
