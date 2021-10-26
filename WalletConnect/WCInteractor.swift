@@ -296,7 +296,7 @@ extension WCInteractor {
         }
     }
 
-    private func handleEvent(_ event: WCEvent, topic: String, decrypted: Data) throws {
+    private func handleEvent(_ event: WCEvent, topic: String, decrypted: Data, timestamp: UInt64?) throws {
         switch event {
         case .sessionRequest, .dc_sessionRequest:
             // topic == session.topic
@@ -321,10 +321,10 @@ extension WCInteractor {
             let request: JSONRPCRequest<[WCIBCTransaction.RequestParam]> = try event.decode(decrypted)
             guard let param = request.params.first else { throw WCError.badJSONRPCRequest }
             let transaction = WCIBCTransaction(requestParam: param)
-            ibc.onTransaction?(request.id, event, transaction, request.session)
+            ibc.onTransaction?(request.id, event, transaction, request.session, timestamp)
         default:
             if WCEvent.eth.contains(event) {
-                try eth.handleEvent(event, topic: topic, decrypted: decrypted)
+                try eth.handleEvent(event, topic: topic, decrypted: decrypted, timestamp: timestamp)
             } else if WCEvent.bnb.contains(event) {
                 try bnb.handleEvent(event, topic: topic, decrypted: decrypted)
             } else if WCEvent.trust.contains(event) {
@@ -390,7 +390,7 @@ extension WCInteractor {
                 WCLog("<== decrypted: \(String(data: decrypted, encoding: .utf8)!)")
                 if let method = json["method"] as? String {
                     if let event = WCEvent(rawValue: method) {
-                        try handleEvent(event, topic: topic, decrypted: decrypted)
+                        try handleEvent(event, topic: topic, decrypted: decrypted, timestamp: timestamp)
                     } else if let id = json["id"] as? Int64 {
                         onCustomRequest?(id, json)
                     }

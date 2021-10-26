@@ -9,7 +9,8 @@ import Foundation
 
 public typealias IBCTransactionClosure = (_ id: Int64, _ event: WCEvent,
                                           _ transaction: WCIBCTransaction,
-                                          _ session: JSONRPCSession?) -> Void
+                                          _ session: JSONRPCSession?,
+                                          _ timestamp: UInt64?) -> Void
 
 public struct WCIBCInteractor {
     public var onTransaction: IBCTransactionClosure?
