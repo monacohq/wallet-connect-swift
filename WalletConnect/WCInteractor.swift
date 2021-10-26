@@ -366,6 +366,7 @@ extension WCInteractor {
         subscribe(topic: clientId)
     }
 
+    // if the error is nil, the behavior is user triggered
     private func onDisconnect(error: Error?) {
         stopTimers()
         onDisconnect?(error)
