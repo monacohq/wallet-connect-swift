@@ -314,6 +314,7 @@ extension WCInteractor {
             let request: JSONRPCRequest<[WCSessionUpdateParam]> = try event.decode(decrypted)
             guard let param = request.params.first else { throw WCError.badJSONRPCRequest }
             if param.approved == false {
+                WCLog("method:\(event) approved false so disconnect it")
                 disconnect()
                 self.onSessionKilled?()
             }
