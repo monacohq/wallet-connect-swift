@@ -16,11 +16,11 @@ public struct WCSession: Codable, Equatable {
         public var prefix: String {
             switch self {
             case .unknown:
-                return ":"
+                return ""
             case .wc:
-                return "wc:"
+                return "wc"
             case .cwe:
-                return "CWE:"
+                return "CWE"
             }
         }
     }
@@ -35,21 +35,30 @@ public struct WCSession: Codable, Equatable {
 
     public static func from(string: String) -> WCSession? {
         var source = Source.unknown
-        if string.hasPrefix("wc:") {
+
+        guard let decodedString = WCSession.urlDecodeIfNeed(string: string) else {
+            return nil
+        }
+
+        if decodedString.hasPrefix("wc:") {
             source = .wc
-        } else if string.hasPrefix("CWE:") {
+        } else if decodedString.hasPrefix("CWE:") {
             source = .cwe
         } else {
             return nil
         }
 
-        let subStrings = string.split(separator: ":")
+        let subStrings = decodedString.split(separator: ":")
 
-        guard subStrings.count == 2 else {
-            return nil
+        var urlString = ""
+
+        subStrings.enumerated().forEach { index, subString in
+            urlString += "\(subString)"
+            if index == 0 {
+                urlString += "://"
+            }
         }
 
-        let urlString = "\(subStrings[0])://\(subStrings[1])"
         guard let url = URL(string: urlString),
             let topic = url.user,
             let version = url.host,
@@ -74,5 +83,13 @@ public struct WCSession: Codable, Equatable {
                          numericalVersion: Double(version) ?? 1.0,
                          source: source,
                          isExtension: dicts["role"] == "extension")
+    }
+
+    private static func urlDecodeIfNeed(string: String) -> String? {
+        if string.hasPrefix("wc:") || string.hasPrefix("CWE:") {
+            return string
+        } else {
+            return string.removingPercentEncoding
+        }
     }
 }
