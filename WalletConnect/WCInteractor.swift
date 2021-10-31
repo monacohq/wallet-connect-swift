@@ -68,6 +68,7 @@ open class WCInteractor {
         }
     }
     public var peerMeta: WCPeerMeta?
+    private var userDidCancelWebsocket: Bool
 
     // Rx
     private var stateRelay: BehaviorRelay<WCInteractorState>
@@ -85,6 +86,7 @@ open class WCInteractor {
         self.clientMeta = meta
         self.sessionRequestTimeout = sessionRequestTimeout
         self.addressRequiredCoinTypes = addressRequiredCoinTypes
+        self.userDidCancelWebsocket = false
 
         var request = URLRequest(url: session.bridge)
         request.timeoutInterval = sessionRequestTimeout
@@ -191,6 +193,7 @@ open class WCInteractor {
         return Completable.create { [weak self] completable in
             self?.encryptAndSend(data: response.encoded).subscribe(
                 onCompleted: {
+                    self?.userDidCancelWebsocket = true
                     self?.onSessionKilled?()
                     self?.disconnect()
                     completable(.completed)
@@ -315,8 +318,9 @@ extension WCInteractor {
             guard let param = request.params.first else { throw WCError.badJSONRPCRequest }
             if param.approved == false {
                 WCLog("method:\(event) approved false so disconnect it")
+                userDidCancelWebsocket = true
+                onSessionKilled?()
                 disconnect()
-                self.onSessionKilled?()
             }
         case .cosmos_sendTransaction:
             let request: JSONRPCRequest<[WCIBCTransaction.RequestParam]> = try event.decode(decrypted)
@@ -424,7 +428,7 @@ extension WCInteractor: WebSocketDelegate {
             WCLog("<== websocketDidDisconnected: \(reason) with code: \(code)")
 
             if code == 4022 {
-                let error = WCError.tooManyMessages(desc: reason)
+                let error = WCError.security(desc: reason)
                 onDisconnect(error: error)
                 stateRelay.accept(.disconnected)
                 return
@@ -450,10 +454,16 @@ extension WCInteractor: WebSocketDelegate {
             }
             WCLog("<== websocketReconnectSuggested: \(shouldReconnect)")
         case .cancelled:
-            // disconnection triggered by users
             WCLog("<== websocketDidCancelled")
             stateRelay.accept(.disconnected)
-            onDisconnect(error: nil)
+
+            if userDidCancelWebsocket {
+                onDisconnect(error: nil)
+            } else {
+                let name = peerMeta?.url ?? "Extension/DApp"
+                let error = WCError.security(desc: "\(name) disconnected because of a network error.")
+                onDisconnect(error: error)
+            }
         }
     }
 
