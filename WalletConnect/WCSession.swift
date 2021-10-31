@@ -8,19 +8,57 @@ import Foundation
 import CryptoSwift
 
 public struct WCSession: Codable, Equatable {
+    public enum Source: String, Codable {
+        case unknown
+        case wc
+        case cwe
+
+        public var prefix: String {
+            switch self {
+            case .unknown:
+                return ""
+            case .wc:
+                return "wc"
+            case .cwe:
+                return "CWE"
+            }
+        }
+    }
     public static let legacySessionVersion = 1.0
     public let topic: String
     public let version: String
     public let bridge: URL
     public let key: Data
     public let numericalVersion: Double
+    public let source: Source
+    public let isExtension: Bool
 
     public static func from(string: String) -> WCSession? {
-        guard string .hasPrefix("wc:") else {
+        var source = Source.unknown
+
+        guard let decodedString = WCSession.urlDecodeIfNeed(string: string) else {
             return nil
         }
 
-        let urlString = string.replacingOccurrences(of: "wc:", with: "wc://")
+        if decodedString.hasPrefix("wc:") {
+            source = .wc
+        } else if decodedString.hasPrefix("CWE:") {
+            source = .cwe
+        } else {
+            return nil
+        }
+
+        let subStrings = decodedString.split(separator: ":")
+
+        var urlString = ""
+
+        subStrings.enumerated().forEach { index, subString in
+            urlString += "\(subString)"
+            if index == 0 {
+                urlString += "://"
+            }
+        }
+
         guard let url = URL(string: urlString),
             let topic = url.user,
             let version = url.host,
@@ -42,6 +80,16 @@ public struct WCSession: Codable, Equatable {
 
         return WCSession(topic: topic, version: version, bridge: bridgeUrl,
                          key: Data(hex: key),
-                         numericalVersion: Double(version) ?? 1.0)
+                         numericalVersion: Double(version) ?? 1.0,
+                         source: source,
+                         isExtension: dicts["role"] == "extension")
+    }
+
+    private static func urlDecodeIfNeed(string: String) -> String? {
+        if string.hasPrefix("wc:") || string.hasPrefix("CWE:") {
+            return string
+        } else {
+            return string.removingPercentEncoding
+        }
     }
 }
