@@ -460,7 +460,8 @@ extension WCInteractor: WebSocketDelegate {
             if userDidCancelWebsocket {
                 onDisconnect(error: nil)
             } else {
-                let error = WCError.security(desc: "Extension/DApp disconnected because of a network error.")
+                let name = peerMeta?.url ?? "Extension/DApp"
+                let error = WCError.security(desc: "\(name) disconnected because of a network error.")
                 onDisconnect(error: error)
             }
         }
