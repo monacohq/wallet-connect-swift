@@ -193,9 +193,9 @@ open class WCInteractor {
         return Completable.create { [weak self] completable in
             self?.encryptAndSend(data: response.encoded).subscribe(
                 onCompleted: {
+                    self?.userDidCancelWebsocket = true
                     self?.onSessionKilled?()
                     self?.disconnect()
-                    self?.userDidCancelWebsocket = true
                     completable(.completed)
                 },
                 onError: { error in
@@ -317,9 +317,10 @@ extension WCInteractor {
             let request: JSONRPCRequest<[WCSessionUpdateParam]> = try event.decode(decrypted)
             guard let param = request.params.first else { throw WCError.badJSONRPCRequest }
             if param.approved == false {
+                WCLog("method:\(event) approved false so disconnect it")
+                userDidCancelWebsocket = true
                 onSessionKilled?()
                 disconnect()
-                userDidCancelWebsocket = true
             }
         case .cosmos_sendTransaction:
             let request: JSONRPCRequest<[WCIBCTransaction.RequestParam]> = try event.decode(decrypted)
@@ -420,11 +421,11 @@ extension WCInteractor: WebSocketDelegate {
     public func didReceive(event: WebSocketEvent, client: WebSocket) {
         switch event {
         case .connected(let headers):
-            WCLog("<== websocketDidConnected:\n\(headers)")
+            WCLog("<== websocketDidConnected: \(headers)")
             stateRelay.accept(.connected)
             onConnect()
         case .disconnected(let reason, let code):
-            WCLog("<== websocketDidDisconnected:\n\(reason) with code: \(code)")
+            WCLog("<== websocketDidDisconnected: \(reason) with code: \(code)")
 
             if code == 4022 {
                 let error = WCError.security(desc: reason)
@@ -437,13 +438,13 @@ extension WCInteractor: WebSocketDelegate {
         case .text(let text):
             onReceiveMessage(text: text)
         case .binary(let data):
-            WCLog("<== websocketDidReceiveData:\n\(data.toHexString())")
+            WCLog("<== websocketDidReceiveData: \(data.toHexString())")
         case .pong:
             WCLog("<== pong")
         case .ping:
             WCLog("==> ping")
         case .error(let error):
-            WCLog("<== websocketDidDisconnected:\nerror:\(error.debugDescription)")
+            WCLog("<== websocketDidDisconnected: error:\(error.debugDescription)")
             reconnect()
         case .viabilityChanged(let bool):
             WCLog("<== websocketViabilityChanged: \(bool)")
@@ -476,7 +477,7 @@ extension WCInteractor: WebSocketDelegate {
                 .subscribe(onCompleted: {
                     WCLog("<== websocketDidReconnected")
                 }, onError: { [weak self] error in
-                    WCLog("<== websocketFailedToReconnect:\nerror:\(error.localizedDescription)")
+                    WCLog("<== websocketFailedToReconnect: error:\(error.localizedDescription)")
                     self?.stateRelay.accept(.disconnected)
                     self?.onDisconnect(error: error)
                 }).disposed(by: bag)
