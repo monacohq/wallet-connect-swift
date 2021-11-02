@@ -340,6 +340,13 @@ extension WCInteractor {
         }
     }
 
+    private func setupPingTimer() {
+        pingTimer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { [weak socket] _ in
+            WCLogger.info("==> ping")
+            socket?.write(ping: Data())
+        }
+    }
+
     private func checkExistingSession() {
         // check if it's an existing session
         if let existing = WCSessionStore.load(session.topic), existing.session == session {
@@ -367,6 +374,7 @@ extension WCInteractor {
 // MARK: WebSocket event handler
 extension WCInteractor {
     private func onConnect() {
+        setupPingTimer()
         checkExistingSession()
 
         subscribe(topic: session.topic)
@@ -381,6 +389,8 @@ extension WCInteractor {
 
     private func onReceiveMessage(text: String) {
         WCLogger.info("<== receive: \(text)")
+        if text == "ping" { return socket.write(pong: Data()) }
+
         guard let (topic, messageType, payload, timestamp) = WCEncryptionPayload.extract(text) else { return }
         switch messageType {
         case .ack:
@@ -444,8 +454,9 @@ extension WCInteractor: WebSocketDelegate {
         case .pong:
             WCLogger.info("<== pong")
         case .ping:
-            WCLogger.info("==> ping")
-            socket.write(pong: Data())
+            break
+//            WCLogger.info("==> ping")
+//            return socket.write(pong: Data())
         case .error(let error):
             WCLogger.error("<== websocketDidDisconnected: error:\(error.debugDescription)")
             reconnect()
