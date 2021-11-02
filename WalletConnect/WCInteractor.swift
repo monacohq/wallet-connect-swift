@@ -138,11 +138,13 @@ open class WCInteractor {
     }
 
     open func pause() {
+        WCLogger.info("Pause")
         stateRelay.accept(.paused)
         socket.disconnect(closeCode: CloseCode.goingAway.rawValue)
     }
 
     open func resume() {
+        WCLogger.info("Resume")
         socket.connect()
     }
 
@@ -194,8 +196,8 @@ open class WCInteractor {
             self?.encryptAndSend(data: response.encoded).subscribe(
                 onCompleted: {
                     self?.userDidCancelWebsocket = true
-                    self?.onSessionKilled?()
                     self?.disconnect()
+                    self?.onSessionKilled?()
                     completable(.completed)
                 },
                 onError: { error in
@@ -319,8 +321,8 @@ extension WCInteractor {
             if param.approved == false {
                 WCLogger.info("method:\(event) approved false so disconnect it")
                 userDidCancelWebsocket = true
-                onSessionKilled?()
                 disconnect()
+                onSessionKilled?()
             }
         case .cosmos_sendTransaction:
             let request: JSONRPCRequest<[WCIBCTransaction.RequestParam]> = try event.decode(decrypted)
@@ -443,6 +445,7 @@ extension WCInteractor: WebSocketDelegate {
             WCLogger.info("<== pong")
         case .ping:
             WCLogger.info("==> ping")
+            socket.write(pong: Data())
         case .error(let error):
             WCLogger.error("<== websocketDidDisconnected: error:\(error.debugDescription)")
             reconnect()
