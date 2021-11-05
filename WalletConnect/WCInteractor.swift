@@ -95,6 +95,7 @@ open class WCInteractor {
     }
 
     deinit {
+        WCLogger.info("🔥 deinit session.topic:\(session.topic) clientId:\(clientId)")
         disconnect()
     }
 
@@ -418,11 +419,8 @@ extension WCInteractor: WebSocketDelegate {
             onReceiveMessage(text: text)
         case .binary(let data):
             WCLogger.info("<== websocketDidReceiveData: \(data.toHexString())")
-        case .pong:
-            WCLogger.info("<== pong")
-        case .ping:
-            WCLogger.info("==> ping")
-            socket.write(pong: Data())
+        case .ping, .pong:
+            break
         case .error(let error):
             WCLogger.error("<== websocketDidDisconnected: error:\(error.debugDescription)")
             reconnect()
