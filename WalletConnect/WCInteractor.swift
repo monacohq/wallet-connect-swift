@@ -137,17 +137,6 @@ open class WCInteractor {
         }
     }
 
-    open func pause() {
-        WCLogger.info("Pause")
-        stateRelay.accept(.paused)
-        socket.disconnect(closeCode: CloseCode.goingAway.rawValue)
-    }
-
-    open func resume() {
-        WCLogger.info("Resume")
-        socket.connect()
-    }
-
     open func disconnect() {
         stopTimers()
 
