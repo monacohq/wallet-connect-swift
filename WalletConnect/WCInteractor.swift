@@ -16,13 +16,6 @@ public typealias CustomRequestClosure = (_ id: Int64, _ request: [String: Any]) 
 public typealias ErrorClosure = (Error) -> Void
 public typealias ReceiveACKClosure = (_ message: WCInteractor.ACKMessage) -> Void
 
-public enum WCInteractorState {
-    case connected
-    case connecting
-    case paused
-    case disconnected
-}
-
 open class WCInteractor {
     public let session: WCSession
 
@@ -71,12 +64,8 @@ open class WCInteractor {
     private var userDidCancelWebsocket: Bool
 
     // Rx
-    private var stateRelay: BehaviorRelay<WCInteractorState>
+    private var isConnectedRelay: BehaviorRelay<Bool>
     private let disposeBag = DisposeBag()
-
-    public var state: WCInteractorState {
-        return stateRelay.value
-    }
 
     public init(session: WCSession, meta: WCPeerMeta,
                 uuid: UUID, sessionRequestTimeout: TimeInterval = 20,
@@ -93,7 +82,7 @@ open class WCInteractor {
         let pinner = FoundationSecurity(allowSelfSigned: true)
 
         self.socket = WebSocket(request: request, certPinner: pinner)
-        self.stateRelay = .init(value: .disconnected)
+        self.isConnectedRelay = .init(value: false)
 
         self.eth = WCEthereumInteractor()
         self.bnb = WCBinanceInteractor()
@@ -110,24 +99,23 @@ open class WCInteractor {
     }
 
     open func connect() -> Completable {
+        let isConnectedRelay = self.isConnectedRelay
         let websocket = self.socket
-        let stateRelay = self.stateRelay
         let bag = self.disposeBag
 
         return Completable.create { completable in
-            if stateRelay.value == .connected {
+            if isConnectedRelay.value == true {
                 completable(.completed)
             }
 
-            stateRelay.accept(.connecting)
             websocket.connect()
 
             let timer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { _ in
                 completable(.error(WCError.sessionRequestTimeout))
             }
 
-            stateRelay.subscribe(onNext: { state in
-                if state == .connected {
+            isConnectedRelay.subscribe(onNext: { isConnected in
+                if isConnected {
                     timer.invalidate()
                     completable(.completed)
                 }
@@ -141,7 +129,7 @@ open class WCInteractor {
         stopTimers()
 
         socket.disconnect()
-        stateRelay.accept(.disconnected)
+        isConnectedRelay.accept(false)
 
         handshakeId = -1
     }
@@ -413,7 +401,7 @@ extension WCInteractor: WebSocketDelegate {
         switch event {
         case .connected(let headers):
             WCLogger.info("<== websocketDidConnected: \(headers)")
-            stateRelay.accept(.connected)
+            isConnectedRelay.accept(true)
             onConnect()
         case .disconnected(let reason, let code):
             WCLogger.error("<== websocketDidDisconnected: \(reason) with code: \(code)")
@@ -421,7 +409,7 @@ extension WCInteractor: WebSocketDelegate {
             if code == 4022 {
                 let error = WCError.security(desc: reason)
                 onDisconnect(error: error)
-                stateRelay.accept(.disconnected)
+                isConnectedRelay.accept(false)
                 return
             }
 
@@ -447,7 +435,7 @@ extension WCInteractor: WebSocketDelegate {
             WCLogger.info("<== websocketReconnectSuggested: \(shouldReconnect)")
         case .cancelled:
             WCLogger.error("<== websocketDidCancelled")
-            stateRelay.accept(.disconnected)
+            isConnectedRelay.accept(false)
 
             if userDidCancelWebsocket {
                 onDisconnect(error: nil)
@@ -460,7 +448,7 @@ extension WCInteractor: WebSocketDelegate {
     }
 
     private func reconnect() {
-        guard state != .connecting && state != .connected else { return }
+        guard !isConnectedRelay.value else { return }
 
         let reconnectCount = self.maxReconnectCount
         let bag = self.disposeBag
@@ -471,7 +459,7 @@ extension WCInteractor: WebSocketDelegate {
                     WCLogger.info("<== websocketDidReconnected")
                 }, onError: { [weak self] error in
                     WCLogger.error("<== websocketFailedToReconnect: error:\(error.localizedDescription)")
-                    self?.stateRelay.accept(.disconnected)
+                    self?.isConnectedRelay.accept(false)
                     self?.onDisconnect(error: error)
                 }).disposed(by: bag)
         }
