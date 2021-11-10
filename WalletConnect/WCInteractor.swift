@@ -414,7 +414,7 @@ extension WCInteractor: WebSocketDelegate {
                 return
             }
 
-            reconnect()
+//            reconnect()
         case .text(let text):
             onReceiveMessage(text: text)
         case .binary(let data):
@@ -423,13 +423,13 @@ extension WCInteractor: WebSocketDelegate {
             break
         case .error(let error):
             WCLogger.error("<== websocketDidDisconnected: error:\(error.debugDescription)")
-            reconnect()
+//            reconnect()
         case .viabilityChanged(let bool):
             WCLogger.info("<== websocketViabilityChanged: \(bool)")
         case .reconnectSuggested(let shouldReconnect):
-            if shouldReconnect {
-                reconnect()
-            }
+//            if shouldReconnect {
+//                reconnect()
+//            }
             WCLogger.info("<== websocketReconnectSuggested: \(shouldReconnect)")
         case .cancelled:
             WCLogger.error("<== websocketDidCancelled")
@@ -445,21 +445,21 @@ extension WCInteractor: WebSocketDelegate {
         }
     }
 
-    private func reconnect() {
-        guard !isConnectedRelay.value else { return }
-
-        let reconnectCount = self.maxReconnectCount
-        let bag = self.disposeBag
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            self.connect().retry(reconnectCount)
-                .subscribe(onCompleted: {
-                    WCLogger.info("<== websocketDidReconnected")
-                }, onError: { [weak self] error in
-                    WCLogger.error("<== websocketFailedToReconnect: error:\(error.localizedDescription)")
-                    self?.isConnectedRelay.accept(false)
-                    self?.onDisconnect(error: error)
-                }).disposed(by: bag)
-        }
-    }
+//    private func reconnect() {
+//        guard !isConnectedRelay.value else { return }
+//
+//        let reconnectCount = self.maxReconnectCount
+//        let bag = self.disposeBag
+//
+//        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+//            self.connect().retry(reconnectCount)
+//                .subscribe(onCompleted: {
+//                    WCLogger.info("<== websocketDidReconnected")
+//                }, onError: { [weak self] error in
+//                    WCLogger.error("<== websocketFailedToReconnect: error:\(error.localizedDescription)")
+//                    self?.isConnectedRelay.accept(false)
+//                    self?.onDisconnect(error: error)
+//                }).disposed(by: bag)
+//        }
+//    }
 }
