@@ -318,6 +318,13 @@ extension WCInteractor {
         }
     }
 
+    private func setupPingTimer() {
+        pingTimer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { [weak socket] _ in
+            WCLogger.info("==> ping")
+            socket?.write(ping: Data())
+        }
+    }
+
     private func checkExistingSession() {
         // check if it's an existing session
         if let existing = WCSessionStore.load(session.topic), existing.session == session {
@@ -345,6 +352,7 @@ extension WCInteractor {
 // MARK: WebSocket event handler
 extension WCInteractor {
     private func onConnect() {
+        setupPingTimer()
         checkExistingSession()
 
         subscribe(topic: session.topic)
@@ -359,6 +367,8 @@ extension WCInteractor {
 
     private func onReceiveMessage(text: String) {
         WCLogger.info("<== receive: \(text)")
+        if text == "ping" { return socket.write(pong: Data()) }
+
         guard let (topic, messageType, payload, timestamp) = WCEncryptionPayload.extract(text) else { return }
         switch messageType {
         case .ack:
@@ -414,22 +424,26 @@ extension WCInteractor: WebSocketDelegate {
                 return
             }
 
-            reconnect()
+//            reconnect()
         case .text(let text):
             onReceiveMessage(text: text)
         case .binary(let data):
             WCLogger.info("<== websocketDidReceiveData: \(data.toHexString())")
-        case .ping, .pong:
+        case .pong:
+            WCLogger.info("<== pong")
+        case .ping:
             break
+//            WCLogger.info("==> ping")
+//            return socket.write(pong: Data())
         case .error(let error):
             WCLogger.error("<== websocketDidDisconnected: error:\(error.debugDescription)")
-            reconnect()
+//            reconnect()
         case .viabilityChanged(let bool):
             WCLogger.info("<== websocketViabilityChanged: \(bool)")
         case .reconnectSuggested(let shouldReconnect):
-            if shouldReconnect {
-                reconnect()
-            }
+//            if shouldReconnect {
+//                reconnect()
+//            }
             WCLogger.info("<== websocketReconnectSuggested: \(shouldReconnect)")
         case .cancelled:
             WCLogger.error("<== websocketDidCancelled")
@@ -445,21 +459,21 @@ extension WCInteractor: WebSocketDelegate {
         }
     }
 
-    private func reconnect() {
-        guard !isConnectedRelay.value else { return }
-
-        let reconnectCount = self.maxReconnectCount
-        let bag = self.disposeBag
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            self.connect().retry(reconnectCount)
-                .subscribe(onCompleted: {
-                    WCLogger.info("<== websocketDidReconnected")
-                }, onError: { [weak self] error in
-                    WCLogger.error("<== websocketFailedToReconnect: error:\(error.localizedDescription)")
-                    self?.isConnectedRelay.accept(false)
-                    self?.onDisconnect(error: error)
-                }).disposed(by: bag)
-        }
-    }
+//    private func reconnect() {
+//        guard !isConnectedRelay.value else { return }
+//
+//        let reconnectCount = self.maxReconnectCount
+//        let bag = self.disposeBag
+//
+//        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+//            self.connect().retry(reconnectCount)
+//                .subscribe(onCompleted: {
+//                    WCLogger.info("<== websocketDidReconnected")
+//                }, onError: { [weak self] error in
+//                    WCLogger.error("<== websocketFailedToReconnect: error:\(error.localizedDescription)")
+//                    self?.isConnectedRelay.accept(false)
+//                    self?.onDisconnect(error: error)
+//                }).disposed(by: bag)
+//        }
+//    }
 }
