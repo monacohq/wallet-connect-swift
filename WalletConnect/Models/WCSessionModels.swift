@@ -172,3 +172,12 @@ public struct WCApproveSessionResponse: Codable {
         try container.encodeIfPresent(wallets, forKey: .wallets)
     }
 }
+
+public struct WCApproveOriginalSessionResponse: Codable {
+    public let approved: Bool
+    public let chainId: Int
+    public let accounts: [String]
+
+    public let peerId: String?
+    public let peerMeta: WCPeerMeta?
+}

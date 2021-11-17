@@ -156,6 +156,18 @@ open class WCInteractor {
         return encryptAndSend(data: response.encoded)
     }
 
+    open func approveSession(accounts: [String], chainId: Int) -> Completable {
+        let result = WCApproveOriginalSessionResponse(
+            approved: true,
+            chainId: chainId,
+            accounts: accounts,
+            peerId: clientId,
+            peerMeta: clientMeta
+        )
+        let response = JSONRPCResponse(id: handshakeId, result: result)
+        return encryptAndSend(data: response.encoded)
+    }
+
     open func rejectSession(_ message: String = "Session Rejected") -> Completable {
         guard handshakeId > 0 else {
             return Completable.error(WCError.sessionInvalid)
