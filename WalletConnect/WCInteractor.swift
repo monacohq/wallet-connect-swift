@@ -23,7 +23,8 @@ public enum WCInteractorState {
 }
 
 public protocol WCInteractorDelegate: class {
-    func handleEvent(_ event: WCEvent, topic: String, decrypted: Data) throws
+    func handleEvent(_ event: WCEvent, topic: String,
+                     decrypted: Data, timestamp: UInt64?) throws
 }
 
 open class WCInteractor {
@@ -351,7 +352,9 @@ extension WCInteractor {
                 WCLog("<== decrypted: \(String(data: decrypted, encoding: .utf8)!)")
                 if let method = json["method"] as? String {
                     if let event = WCEvent(rawValue: method) {
-                        try delegate?.handleEvent(event, topic: topic, decrypted: decrypted)
+                        try delegate?.handleEvent(event, topic: topic,
+                                                  decrypted: decrypted,
+                                                  timestamp: timestamp)
                     } else if let id = json["id"] as? Int64 {
                         onCustomRequest?(id, json)
                     }

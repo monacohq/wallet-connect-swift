@@ -11,5 +11,6 @@ public enum WCError: LocalizedError {
     case badJSONRPCRequest
     case sessionInvalid
     case sessionRequestTimeout
+    case security(desc: String)
     case unknown
 }
