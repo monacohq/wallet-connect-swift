@@ -14,7 +14,9 @@ public struct WCBinanceInteractor {
 
     var confirmResolvers: [Int64: Resolver<WCBinanceTxConfirmParam>] = [:]
 
-    mutating func handleEvent(_ event: WCEvent, topic: String, decrypted: Data) throws {
+    public init() { }
+
+    public mutating func handleEvent(_ event: WCEvent, topic: String, decrypted: Data) throws {
         switch event {
         case .bnbSign:
             if let request: JSONRPCRequest<[WCBinanceTradeOrder]> = try? event.decode(decrypted) {

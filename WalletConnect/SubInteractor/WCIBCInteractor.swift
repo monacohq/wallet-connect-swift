@@ -13,4 +13,6 @@ public typealias IBCTransactionClosure = (_ id: Int64, _ event: WCEvent,
 
 public struct WCIBCInteractor {
     public var onTransaction: IBCTransactionClosure?
+
+    public init() { }
 }

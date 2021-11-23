@@ -33,13 +33,13 @@ public enum WCEvent: String {
 
 extension WCEvent {
 
-    static let eth = Set<WCEvent>([.ethSign, .ethPersonalSign, .ethSignTypeData, .ethSignTransaction, .ethSendTransaction])
-    static let bnb = Set<WCEvent>([.bnbSign, .bnbTransactionConfirm])
-    static let trust = Set<WCEvent>([.trustSignTransacation, .getAccounts])
-    static let dc = Set<WCEvent>([.dc_instantRequest, .dc_sessionRequest,
-                                  .dc_sessionUpdate, .dc_killSession])
+    public static let eth = Set<WCEvent>([.ethSign, .ethPersonalSign, .ethSignTypeData, .ethSignTransaction, .ethSendTransaction])
+    public static let bnb = Set<WCEvent>([.bnbSign, .bnbTransactionConfirm])
+    public static let trust = Set<WCEvent>([.trustSignTransacation, .getAccounts])
+    public static let dc = Set<WCEvent>([.dc_instantRequest, .dc_sessionRequest,
+                                         .dc_sessionUpdate, .dc_killSession])
 
-    func decode<T: Codable>(_ data: Data) throws -> JSONRPCRequest<T> {
+    public func decode<T: Codable>(_ data: Data) throws -> JSONRPCRequest<T> {
         return try JSONDecoder().decode(JSONRPCRequest<T>.self, from: data)
     }
 }

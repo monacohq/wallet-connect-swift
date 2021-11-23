@@ -22,6 +22,10 @@ public enum WCInteractorState {
     case disconnected
 }
 
+public protocol WCInteractorDelegate: class {
+    func handleEvent(_ event: WCEvent, topic: String, decrypted: Data) throws
+}
+
 open class WCInteractor {
     public let session: WCSession
 
@@ -29,13 +33,8 @@ open class WCInteractor {
 
     public let clientId: String
     public let clientMeta: WCPeerMeta
-    public private(set) var addressRequiredCoinTypes = [WCSessionAddressRequiredCoinType]()
     public private(set) var chainType: String?
-
-    public var eth: WCEthereumInteractor
-    public var bnb: WCBinanceInteractor
-    public var trust: WCTrustInteractor
-    public var ibc: WCIBCInteractor
+    weak var delegate: WCInteractorDelegate?
 
     // incoming event handlers
     public var onSessionRequest: SessionRequestClosure?
@@ -83,11 +82,6 @@ open class WCInteractor {
         request.timeoutInterval = sessionRequestTimeout
         self.socket = WebSocket(request: request)
 
-        self.eth = WCEthereumInteractor()
-        self.bnb = WCBinanceInteractor()
-        self.trust = WCTrustInteractor()
-        self.ibc = WCIBCInteractor()
-
         socket.onConnect = { [weak self] in self?.onConnect() }
         socket.onDisconnect = { [weak self] error in self?.onDisconnect(error: error) }
         socket.onText = { [weak self] text in self?.onReceiveMessage(text: text) }
@@ -101,6 +95,7 @@ open class WCInteractor {
         disconnect()
     }
 
+    // MARK: - basic abilities
     open func connect() -> Promise<Bool> {
         if socket.isConnected {
             return Promise.value(true)
@@ -132,6 +127,10 @@ open class WCInteractor {
         handshakeId = -1
     }
 
+//    @discardableResult
+//    open func approveSession()
+
+    @discardableResult
     open func approveSession(accounts: [String],
                              chainId: String,
                              selectedWalletId: String? = nil,
@@ -153,6 +152,7 @@ open class WCInteractor {
         return encryptAndSend(data: response.encoded)
     }
 
+    @discardableResult
     open func rejectSession(_ message: String = "Session Rejected") -> Promise<Void> {
         guard handshakeId > 0 else {
             return Promise(error: WCError.sessionInvalid)
@@ -186,15 +186,15 @@ open class WCInteractor {
         return encryptAndSend(data: response.encoded)
     }
 
-    open func approveBnbOrder(id: Int64, signed: WCBinanceOrderSignature) -> Promise<WCBinanceTxConfirmParam> {
-        let result = signed.encodedString
-        return approveRequest(id: id, result: result)
-            .then { _ -> Promise<WCBinanceTxConfirmParam> in
-                return Promise { [weak self] seal in
-                    self?.bnb.confirmResolvers[id] = seal
-                }
-            }
-    }
+//    open func approveBnbOrder(id: Int64, signed: WCBinanceOrderSignature) -> Promise<WCBinanceTxConfirmParam> {
+//        let result = signed.encodedString
+//        return approveRequest(id: id, result: result)
+//            .then { _ -> Promise<WCBinanceTxConfirmParam> in
+//                return Promise { [weak self] seal in
+//                    self?.bnb.confirmResolvers[id] = seal
+//                }
+//            }
+//    }
 
     open func approveRequest<T: Codable>(id: Int64, result: T) -> Promise<Void> {
         let response = JSONRPCResponse(id: id, result: result)
@@ -241,6 +241,16 @@ extension WCInteractor {
         subscritionLock.unlock()
     }
 
+    public func setupSessionRequest(request: JSONRPCRequest<[WCSessionRequestParam]>) throws {
+        guard let params = request.params.first else { throw WCError.badJSONRPCRequest }
+        handshakeId = request.id
+        peerId = params.peerId
+        peerMeta = params.peerMeta
+        chainType = params.chainType
+        sessionTimer?.invalidate()
+        onSessionRequest?(request.id, params)
+    }
+
     private func encryptAndSend(data: Data) -> Promise<Void> {
         WCLog("==> encrypt: \(String(data: data, encoding: .utf8)!) ")
         let encoder = JSONEncoder()
@@ -252,43 +262,6 @@ extension WCInteractor {
             socket.write(data: data) {
                 WCLog("==> sent \(String(data: data, encoding: .utf8)!) ")
                 seal.fulfill(())
-            }
-        }
-    }
-
-    private func handleEvent(_ event: WCEvent, topic: String, decrypted: Data) throws {
-        switch event {
-        case .sessionRequest, .dc_sessionRequest:
-            // topic == session.topic
-            let request: JSONRPCRequest<[WCSessionRequestParam]> = try event.decode(decrypted)
-            guard let params = request.params.first else { throw WCError.badJSONRPCRequest }
-            handshakeId = request.id
-            peerId = params.peerId
-            peerMeta = params.peerMeta
-            chainType = params.chainType
-            addressRequiredCoinTypes = params.accountTypes ?? []
-            sessionTimer?.invalidate()
-            onSessionRequest?(request.id, params)
-        case .sessionUpdate, .dc_sessionUpdate:
-            // topic == clientId
-            let request: JSONRPCRequest<[WCSessionUpdateParam]> = try event.decode(decrypted)
-            guard let param = request.params.first else { throw WCError.badJSONRPCRequest }
-            if param.approved == false {
-                disconnect()
-                self.onSessionKilled?()
-            }
-        case .cosmos_sendTransaction:
-            let request: JSONRPCRequest<[WCIBCTransaction.RequestParam]> = try event.decode(decrypted)
-            guard let param = request.params.first else { throw WCError.badJSONRPCRequest }
-            let transaction = WCIBCTransaction(requestParam: param)
-            ibc.onTransaction?(request.id, event, transaction, request.session)
-        default:
-            if WCEvent.eth.contains(event) {
-                try eth.handleEvent(event, topic: topic, decrypted: decrypted)
-            } else if WCEvent.bnb.contains(event) {
-                try bnb.handleEvent(event, topic: topic, decrypted: decrypted)
-            } else if WCEvent.trust.contains(event) {
-                try trust.handleEvent(event, topic: topic, decrypted: decrypted)
             }
         }
     }
@@ -378,7 +351,7 @@ extension WCInteractor {
                 WCLog("<== decrypted: \(String(data: decrypted, encoding: .utf8)!)")
                 if let method = json["method"] as? String {
                     if let event = WCEvent(rawValue: method) {
-                        try handleEvent(event, topic: topic, decrypted: decrypted)
+                        try delegate?.handleEvent(event, topic: topic, decrypted: decrypted)
                     } else if let id = json["id"] as? Int64 {
                         onCustomRequest?(id, json)
                     }

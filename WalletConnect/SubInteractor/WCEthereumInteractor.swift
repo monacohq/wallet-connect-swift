@@ -16,7 +16,9 @@ public struct WCEthereumInteractor {
     public var onSign: EthSignClosure?
     public var onTransaction: EthTransactionClosure?
 
-    func handleEvent(_ event: WCEvent, topic: String, decrypted: Data) throws {
+    public init() { }
+
+    public func handleEvent(_ event: WCEvent, topic: String, decrypted: Data) throws {
         switch event {
         case .ethSign, .ethPersonalSign:
             let request: JSONRPCRequest<[String]> = try event.decode(decrypted)

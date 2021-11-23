@@ -14,10 +14,10 @@ struct JSONRPCError: Error, Codable {
 }
 
 public struct JSONRPCRequest<T: Codable>: Codable {
-    let id: Int64
+    public let id: Int64
     let jsonrpc = JSONRPCVersion
     let method: String
-    let params: T
+    public let params: T
     /**
      Session info
      
@@ -25,7 +25,7 @@ public struct JSONRPCRequest<T: Codable>: Codable {
 
      this means if connect with original walletConnect, `self.session` is __ALWASY nil__
      */
-    let session: JSONRPCSession?
+    public let session: JSONRPCSession?
 
     init(id: Int64, method: String, params: T, session: JSONRPCSession? = nil) {
         self.id = id

@@ -11,6 +11,10 @@ import SwiftUI
 
 public struct WCIBCTransaction {
     public let requestParam: RequestParam
+
+    public init(requestParam: RequestParam) {
+        self.requestParam = requestParam
+    }
 }
 
 extension WCIBCTransaction {
