@@ -27,7 +27,7 @@ public struct JSONRPCRequest<T: Codable>: Codable {
      */
     public let session: JSONRPCSession?
 
-    init(id: Int64, method: String, params: T, session: JSONRPCSession? = nil) {
+    public init(id: Int64, method: String, params: T, session: JSONRPCSession? = nil) {
         self.id = id
         self.method = method
         self.params = params

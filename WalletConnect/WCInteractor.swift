@@ -139,28 +139,6 @@ open class WCInteractor {
     }
 
     @discardableResult
-    open func approveSession(accounts: [String],
-                             chainId: String,
-                             selectedWalletId: String? = nil,
-                             wallets: [WCSessionWalletInfo]? = nil) -> Promise<Void> {
-        guard handshakeId > 0 else {
-            return Promise(error: WCError.sessionInvalid)
-        }
-        let result = WCApproveSessionResponse(
-            approved: true,
-            chainId: chainId,
-            accounts: accounts,
-            peerId: clientId,
-            peerMeta: clientMeta,
-            chainType: chainType,
-            selectedWalletId: selectedWalletId,
-            wallets: wallets
-        )
-        let response = JSONRPCResponse(id: handshakeId, result: result)
-        return encryptAndSend(data: response.encoded)
-    }
-
-    @discardableResult
     open func rejectSession(_ message: String = "Session Rejected") -> Promise<Void> {
         guard handshakeId > 0 else {
             return Promise(error: WCError.sessionInvalid)
@@ -179,27 +157,20 @@ open class WCInteractor {
                 self?.disconnect()
             }
     }
-    
-    open func updateSession(chainId: String, accounts: [String],
-                            method: WCEvent,
-                            selectedWalletId: String? = nil,
-                            wallets: [WCSessionWalletInfo]? = nil) -> Promise<Void> {
-        let result = WCSessionUpdateParam(approved: true,
-                                          chainId: chainId,
-                                          accounts: accounts,
-                                          chainType: chainType,
-                                          selectedWalletId: selectedWalletId,
-                                          wallets: wallets)
-        let response = JSONRPCRequest(id: generateId(), method: method.rawValue, params: [result])
-        return encryptAndSend(data: response.encoded)
+
+    @discardableResult
+    open func updateSession<T: Codable>(request: T) -> Promise<Void> {
+        return encryptAndSend(data: request.encoded)
     }
 
     // MARK: - request operations
+    @discardableResult
     open func approveRequest<T: Codable>(id: Int64, result: T) -> Promise<Void> {
         let response = JSONRPCResponse(id: id, result: result)
         return encryptAndSend(data: response.encoded)
     }
 
+    @discardableResult
     open func rejectRequest(id: Int64, message: String) -> Promise<Void> {
         let response = JSONRPCErrorResponse(id: id, error: JSONRPCError(code: -32000, message: message))
         return encryptAndSend(data: response.encoded)
