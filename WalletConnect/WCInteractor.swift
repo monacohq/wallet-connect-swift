@@ -128,8 +128,15 @@ open class WCInteractor {
         handshakeId = -1
     }
 
-//    @discardableResult
-//    open func approveSession()
+    // MARK: - session operations
+    @discardableResult
+    open func approveSession<T: Codable>(result: T) -> Promise<Void> {
+        guard handshakeId > 0 else {
+            return Promise(error: WCError.sessionInvalid)
+        }
+        let response = JSONRPCResponse(id: handshakeId, result: result)
+        return encryptAndSend(data: response.encoded)
+    }
 
     @discardableResult
     open func approveSession(accounts: [String],
@@ -187,16 +194,7 @@ open class WCInteractor {
         return encryptAndSend(data: response.encoded)
     }
 
-//    open func approveBnbOrder(id: Int64, signed: WCBinanceOrderSignature) -> Promise<WCBinanceTxConfirmParam> {
-//        let result = signed.encodedString
-//        return approveRequest(id: id, result: result)
-//            .then { _ -> Promise<WCBinanceTxConfirmParam> in
-//                return Promise { [weak self] seal in
-//                    self?.bnb.confirmResolvers[id] = seal
-//                }
-//            }
-//    }
-
+    // MARK: - request operations
     open func approveRequest<T: Codable>(id: Int64, result: T) -> Promise<Void> {
         let response = JSONRPCResponse(id: id, result: result)
         return encryptAndSend(data: response.encoded)
@@ -204,19 +202,6 @@ open class WCInteractor {
 
     open func rejectRequest(id: Int64, message: String) -> Promise<Void> {
         let response = JSONRPCErrorResponse(id: id, error: JSONRPCError(code: -32000, message: message))
-        return encryptAndSend(data: response.encoded)
-    }
-
-    open func approveIBCTransaction(id: Int64, signed: String) -> Promise<Void> {
-        guard let jsonData = signed.data(using: .utf8) else {
-            return Promise<Void>()
-        }
-        let decoder = JSONDecoder()
-        guard let signedRequestParam = try? decoder.decode(WCIBCTransaction.RequestParam.self, from: jsonData),
-              let signature = signedRequestParam.signDoc.signature else {
-            return Promise<Void>()
-        }
-        let response = JSONRPCResponse(id: id, result: signature.signature)
         return encryptAndSend(data: response.encoded)
     }
 }
