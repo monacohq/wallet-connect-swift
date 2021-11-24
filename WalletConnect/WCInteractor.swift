@@ -89,7 +89,7 @@ open class WCInteractor {
         socket.onPong = { _ in WCLog("<== pong") }
         socket.onData = { data in WCLog("<== websocketDidReceiveData: \(data.toHexString())") }
 
-        WCLog("interactor init session.topic:\(session.topic) clientId:\(clientId)")
+        WCLogger.info("interactor init session.topic:\(session.topic) clientId:\(clientId)")
     }
 
     deinit {
@@ -182,7 +182,7 @@ extension WCInteractor {
     private func subscribe(topic: String) {
         subscritionLock.lock()
         guard !subscribedTopics.contains(topic) else {
-            WCLog("\(topic) already subscribed")
+            WCLogger.info("\(topic) already subscribed")
             subscritionLock.unlock()
             return
         }
@@ -191,7 +191,7 @@ extension WCInteractor {
         let message = WCSocketMessage(topic: topic, type: .sub, payload: "", timestamp: nil)
         let data = try! JSONEncoder().encode(message)
         socket.write(data: data)
-        WCLog("==> subscribe: \(String(data: data, encoding: .utf8)!)")
+        WCLogger.info("==> subscribe: \(String(data: data, encoding: .utf8)!)")
 
         subscritionLock.lock()
         subscribedTopics.append(topic)
@@ -209,7 +209,7 @@ extension WCInteractor {
     }
 
     private func encryptAndSend(data: Data) -> Promise<Void> {
-        WCLog("==> encrypt: \(String(data: data, encoding: .utf8)!) ")
+        WCLogger.info("==> encrypt: \(String(data: data, encoding: .utf8)!) ")
         let encoder = JSONEncoder()
         let payload = try! WCEncryptor.encrypt(data: data, with: session.key)
         let payloadString = encoder.encodeAsUTF8(payload)
@@ -217,7 +217,7 @@ extension WCInteractor {
         let data = message.encoded
         return Promise { seal in
             socket.write(data: data) {
-                WCLog("==> sent \(String(data: data, encoding: .utf8)!) ")
+                WCLogger.info("==> sent \(String(data: data, encoding: .utf8)!) ")
                 seal.fulfill(())
             }
         }
@@ -225,7 +225,7 @@ extension WCInteractor {
 
     private func setupPingTimer() {
         pingTimer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { [weak socket] _ in
-            WCLog("==> ping")
+            WCLogger.info("==> ping")
             socket?.write(ping: Data())
         }
     }
@@ -257,7 +257,7 @@ extension WCInteractor {
 // MARK: WebSocket event handler
 extension WCInteractor {
     private func onConnect() {
-        WCLog("<== websocketDidConnect")
+        WCLogger.info("<== websocketDidConnect")
 
         setupPingTimer()
         checkExistingSession()
@@ -272,7 +272,7 @@ extension WCInteractor {
     }
 
     private func onDisconnect(error: Error?) {
-        WCLog("<== websocketDidDisconnect, error: \(error.debugDescription)")
+        WCLogger.info("<== websocketDidDisconnect, error: \(error.debugDescription)")
 
         stopTimers()
 
@@ -289,13 +289,13 @@ extension WCInteractor {
     }
 
     private func onReceiveMessage(text: String) {
-        WCLog("<== receive: \(text)")
+        WCLogger.info("<== receive: \(text)")
         // handle ping in text format :(
         if text == "ping" { return socket.write(pong: Data()) }
         guard let (topic, messageType, payload, timestamp) = WCEncryptionPayload.extract(text) else { return }
         switch messageType {
         case .ack:
-            WCLog("<== receive: ACK")
+            WCLogger.info("<== receive: ACK")
             onReceiveACK?(.rawMessage(topic: topic, payload: payload, timestamp: timestamp))
         default:
             guard let payload = payload else { return }
@@ -305,7 +305,7 @@ extension WCInteractor {
                     as? [String: Any] else {
                     throw WCError.badJSONRPCRequest
                 }
-                WCLog("<== decrypted: \(String(data: decrypted, encoding: .utf8)!)")
+                WCLogger.info("<== decrypted: \(String(data: decrypted, encoding: .utf8)!)")
                 if let method = json["method"] as? String {
                     if let event = WCEvent(rawValue: method) {
                         try delegate?.handleEvent(event, topic: topic,
@@ -317,7 +317,7 @@ extension WCInteractor {
                 }
             } catch let error {
                 onError?(error)
-                WCLog("==> onReceiveMessage error: \(error.localizedDescription)")
+                WCLogger.info("==> onReceiveMessage error: \(error.localizedDescription)")
             }
         }
     }
