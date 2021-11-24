@@ -86,8 +86,8 @@ open class WCInteractor {
         socket.onConnect = { [weak self] in self?.onConnect() }
         socket.onDisconnect = { [weak self] error in self?.onDisconnect(error: error) }
         socket.onText = { [weak self] text in self?.onReceiveMessage(text: text) }
-        socket.onPong = { _ in WCLog("<== pong") }
-        socket.onData = { data in WCLog("<== websocketDidReceiveData: \(data.toHexString())") }
+        socket.onPong = { _ in WCLogger.info("<== pong") }
+        socket.onData = { data in WCLogger.info("<== websocketDidReceiveData: \(data.toHexString())") }
 
         WCLogger.info("interactor init session.topic:\(session.topic) clientId:\(clientId)")
     }
