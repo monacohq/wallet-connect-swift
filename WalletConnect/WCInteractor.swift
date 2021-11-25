@@ -8,7 +8,6 @@ import Foundation
 import Starscream
 import PromiseKit
 
-public typealias SessionRequestClosure = (_ id: Int64, _ peerParam: WCSessionRequestParam) -> Void
 public typealias SessionKilledClosure = () -> Void
 public typealias DisconnectClosure = (Error?) -> Void
 public typealias CustomRequestClosure = (_ id: Int64, _ request: [String: Any]) -> Void
@@ -35,10 +34,9 @@ open class WCInteractor {
     public let clientId: String
     public let clientMeta: WCPeerMeta
     public private(set) var chainType: String?
-    weak var delegate: WCInteractorDelegate?
+    public weak var delegate: WCInteractorDelegate?
 
     // incoming event handlers
-    public var onSessionRequest: SessionRequestClosure?
     public var onSessionKilled: SessionKilledClosure?
     public var onDisconnect: DisconnectClosure?
     public var onError: ErrorClosure?
@@ -198,14 +196,13 @@ extension WCInteractor {
         subscritionLock.unlock()
     }
 
-    public func setupSessionRequest(request: JSONRPCRequest<[WCSessionRequestParam]>) throws {
-        guard let params = request.params.first else { throw WCError.badJSONRPCRequest }
-        handshakeId = request.id
-        peerId = params.peerId
-        peerMeta = params.peerMeta
-        chainType = params.chainType
+    public func setupRequestingSession(id: Int64, peerId: String?,
+                                       peerMeta: WCPeerMeta, chainType: String?) {
+        self.handshakeId = id
+        self.peerId = peerId
+        self.peerMeta = peerMeta
+        self.chainType = chainType
         sessionTimer?.invalidate()
-        onSessionRequest?(request.id, params)
     }
 
     private func encryptAndSend(data: Data) -> Promise<Void> {
