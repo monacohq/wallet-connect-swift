@@ -128,7 +128,7 @@ open class WCInteractor {
 
     // MARK: - session operations
     @discardableResult
-    open func approveSession<T: Codable>(result: T) -> Promise<Void> {
+    open func approveSession<T: WCApproveSessionResponseType>(result: T) -> Promise<Void> {
         guard handshakeId > 0 else {
             return Promise(error: WCError.sessionInvalid)
         }
@@ -146,9 +146,8 @@ open class WCInteractor {
     }
 
     @discardableResult
-    open func killSession(method: WCEvent) -> Promise<Void> {
-        let result = WCSessionUpdateParam(approved: false, chainId: nil, accounts: nil)
-        let response = JSONRPCRequest(id: generateId(), method: method.rawValue, params: [result])
+    open func killSession<T: WCSessionUpdateParamType>(method: WCEvent, param: T) -> Promise<Void> {
+        let response = JSONRPCRequest(id: generateId(), method: method.rawValue, params: [param])
         return encryptAndSend(data: response.encoded)
             .map { [weak self] in
                 self?.onSessionKilled?()
@@ -157,7 +156,7 @@ open class WCInteractor {
     }
 
     @discardableResult
-    open func updateSession<T: Codable>(request: T) -> Promise<Void> {
+    open func updateSession<T: WCSessionUpdateParamType>(request: T) -> Promise<Void> {
         return encryptAndSend(data: request.encoded)
     }
 
