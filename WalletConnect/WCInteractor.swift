@@ -22,8 +22,9 @@ public enum WCInteractorState {
 }
 
 public protocol WCInteractorDelegate: class {
-    func handleEvent(_ event: WCEvent, topic: String,
-                     decrypted: Data, timestamp: UInt64?) throws
+//    func handleEvent(_ event: WCEvent, topic: String,
+//                     decrypted: Data, timestamp: UInt64?) throws
+    func onSessionRequest(param: WCSessionRequestParamType)
 }
 
 open class WCInteractor {
@@ -35,6 +36,10 @@ open class WCInteractor {
     public let clientMeta: WCPeerMeta
     public private(set) var chainType: String?
     public weak var delegate: WCInteractorDelegate?
+
+    public var eth: WCEthereumInteractor
+    public var bnb: WCBinanceInteractor
+    public var trust: WCTrustInteractor
 
     // incoming event handlers
     public var onSessionKilled: SessionKilledClosure?
@@ -80,6 +85,10 @@ open class WCInteractor {
         var request = URLRequest(url: session.bridge)
         request.timeoutInterval = sessionRequestTimeout
         self.socket = WebSocket(request: request)
+
+        self.eth = WCEthereumInteractor()
+        self.bnb = WCBinanceInteractor()
+        self.trust = WCTrustInteractor()
 
         socket.onConnect = { [weak self] in self?.onConnect() }
         socket.onDisconnect = { [weak self] error in self?.onDisconnect(error: error) }
@@ -146,7 +155,7 @@ open class WCInteractor {
     }
 
     @discardableResult
-    open func killSession<T: WCSessionUpdateParamType>(method: WCEvent, param: T) -> Promise<Void> {
+    open func killSession<T: WCSessionUpdateParamType>(method: WCEventType, param: T) -> Promise<Void> {
         let response = JSONRPCRequest(id: generateId(), method: method.rawValue, params: [param])
         return encryptAndSend(data: response.encoded)
             .map { [weak self] in
@@ -156,7 +165,9 @@ open class WCInteractor {
     }
 
     @discardableResult
-    open func updateSession<T: WCSessionUpdateParamType>(request: T) -> Promise<Void> {
+    open func updateSession<T: WCSessionUpdateParamType>(method: WCEventType, param: T) -> Promise<Void> {
+        let request = JSONRPCRequest(id: generateId(), method: method.rawValue,
+                                     params: [param])
         return encryptAndSend(data: request.encoded)
     }
 
@@ -304,9 +315,9 @@ extension WCInteractor {
                 WCLogger.info("<== decrypted: \(String(data: decrypted, encoding: .utf8)!)")
                 if let method = json["method"] as? String {
                     if let event = WCEvent(rawValue: method) {
-                        try delegate?.handleEvent(event, topic: topic,
-                                                  decrypted: decrypted,
-                                                  timestamp: timestamp)
+                        try handleEvent(event, topic: topic,
+                                        decrypted: decrypted,
+                                        timestamp: timestamp)
                     } else if let id = json["id"] as? Int64 {
                         onCustomRequest?(id, json)
                     }
@@ -314,6 +325,37 @@ extension WCInteractor {
             } catch let error {
                 onError?(error)
                 WCLogger.info("==> onReceiveMessage error: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    private func handleEvent(_ event: WCEvent, topic: String,
+                             decrypted: Data, timestamp: UInt64?) throws {
+        switch event {
+        case .sessionRequest:
+            // topic == session.topic
+            let request: JSONRPCRequest<[WCSessionRequestParam]> = try event.decode(decrypted)
+            guard let param = request.params.first else { throw WCError.badJSONRPCRequest }
+            setupRequestingSession(id: request.id,
+                                   peerId: param.peerId,
+                                   peerMeta: param.peerMeta,
+                                   chainType: nil)
+            delegate?.onSessionRequest(param: param)
+        case .sessionUpdate:
+            // topic == clientId
+            let request: JSONRPCRequest<[WCSessionUpdateParam]> = try event.decode(decrypted)
+            guard let param = request.params.first else { throw WCError.badJSONRPCRequest }
+            if param.approved == false {
+                disconnect()
+            }
+        default:
+            if WCEvent.eth.contains(event) {
+                try eth.handleEvent(event, topic: topic,
+                                    decrypted: decrypted, timestamp: timestamp)
+            } else if WCEvent.bnb.contains(event) {
+                try bnb.handleEvent(event, topic: topic, decrypted: decrypted)
+            } else if WCEvent.trust.contains(event) {
+                try trust.handleEvent(event, topic: topic, decrypted: decrypted)
             }
         }
     }

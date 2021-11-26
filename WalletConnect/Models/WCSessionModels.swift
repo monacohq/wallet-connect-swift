@@ -8,7 +8,7 @@ import Foundation
 
 //MARK: - session request
 public protocol WCSessionRequestParamType: Codable { }
-public struct WCSessionRequestParam: Codable {
+public struct WCSessionRequestParam: WCSessionRequestParamType {
     public let peerId: String
     public let peerMeta: WCPeerMeta
     public let chainId: Int?
