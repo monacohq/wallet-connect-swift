@@ -224,6 +224,11 @@ open class WCInteractor {
 //            }
 //    }
 
+    open func sendRequest<T: Codable>(id: Int64, method: String, request: T) -> Completable {
+        let request = JSONRPCRequest.init(id: id, method: method, params: request)
+        return encryptAndSend(data: request.encoded)
+    }
+
     open func approveRequest<T: Codable>(id: Int64, result: T) -> Completable {
         let response = JSONRPCResponse(id: id, result: result)
         return encryptAndSend(data: response.encoded)
