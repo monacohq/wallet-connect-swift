@@ -8,6 +8,13 @@ import Foundation
 
 public protocol WCEventType {
     var rawValue: String { get }
+    func decode<T: Codable>(_ data: Data) throws -> JSONRPCRequest<T>
+}
+
+extension WCEventType {
+    public func decode<T: Codable>(_ data: Data) throws -> JSONRPCRequest<T> {
+        return try JSONDecoder().decode(JSONRPCRequest<T>.self, from: data)
+    }
 }
 public enum WCEvent: String, WCEventType {
     case sessionRequest = "wc_sessionRequest"
@@ -41,8 +48,4 @@ extension WCEvent {
     static let trust = Set<WCEvent>([.trustSignTransacation, .getAccounts])
 //  static let dc = Set<WCEvent>([.dc_instantRequest, .dc_sessionRequest,
 //                                         .dc_sessionUpdate, .dc_killSession])
-
-    public func decode<T: Codable>(_ data: Data) throws -> JSONRPCRequest<T> {
-        return try JSONDecoder().decode(JSONRPCRequest<T>.self, from: data)
-    }
 }

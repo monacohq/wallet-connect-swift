@@ -10,7 +10,8 @@ import PromiseKit
 
 public typealias SessionKilledClosure = () -> Void
 public typealias DisconnectClosure = (Error?) -> Void
-public typealias CustomRequestClosure = (_ id: Int64, _ request: [String: Any]) -> Void
+public typealias CustomRequestClosure = (_ id: Int64, _ request: [String: Any],
+                                         _ timestamp: UInt64?) -> Void
 public typealias ErrorClosure = (Error) -> Void
 public typealias ReceiveACKClosure = (_ message: WCInteractor.ACKMessage) -> Void
 
@@ -319,7 +320,7 @@ extension WCInteractor {
                                         decrypted: decrypted,
                                         timestamp: timestamp)
                     } else if let id = json["id"] as? Int64 {
-                        onCustomRequest?(id, json)
+                        onCustomRequest?(id, json, timestamp)
                     }
                 }
             } catch let error {
