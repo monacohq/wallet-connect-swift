@@ -179,6 +179,11 @@ open class WCInteractor {
         return encryptAndSend(data: response.encoded)
     }
 
+    open func sendRequest<T: Codable>(id: Int64, method: String, request: T) -> Promise<Void> {
+        let request = JSONRPCRequest(id: id, method: method, params: request)
+        return encryptAndSend(data: request.encoded)
+    }
+
     @discardableResult
     open func rejectRequest(id: Int64, message: String) -> Promise<Void> {
         let response = JSONRPCErrorResponse(id: id, error: JSONRPCError(code: -32000, message: message))
