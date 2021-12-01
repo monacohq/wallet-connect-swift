@@ -9,6 +9,7 @@ import Starscream
 import PromiseKit
 
 public typealias SessionKilledClosure = () -> Void
+public typealias ConnectedClosure = () -> Void
 public typealias DisconnectClosure = (Error?) -> Void
 public typealias CustomRequestClosure = (_ id: Int64, _ request: [String: Any],
                                          _ timestamp: UInt64?) -> Void
@@ -44,6 +45,7 @@ open class WCInteractor {
 
     // incoming event handlers
     public var onSessionKilled: SessionKilledClosure?
+    public var onConnected: ConnectedClosure?
     public var onDisconnect: DisconnectClosure?
     public var onError: ErrorClosure?
     public var onCustomRequest: CustomRequestClosure?
@@ -285,6 +287,7 @@ extension WCInteractor {
 
         connectResolver?.fulfill(true)
         connectResolver = nil
+        onConnected?()
 
         state = .connected
     }
