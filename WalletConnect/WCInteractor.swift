@@ -212,6 +212,11 @@ extension WCInteractor {
         subscritionLock.unlock()
     }
 
+    private func resetSubscriptions() {
+        subscritionLock.lock(); defer { subscritionLock.unlock() }
+        subscribedTopics.removeAll()
+    }
+
     public func setupRequestingSession(id: Int64, peerId: String?,
                                        peerMeta: WCPeerMeta, chainType: String?) {
         self.handshakeId = id
@@ -288,6 +293,8 @@ extension WCInteractor {
         WCLogger.info("<== websocketDidDisconnect, error: \(error.debugDescription)")
 
         stopTimers()
+
+        resetSubscriptions()
 
         if let error = error {
             connectResolver?.reject(error)
