@@ -285,11 +285,11 @@ extension WCInteractor {
         subscribe(topic: session.topic)
         subscribe(topic: clientId)
 
+        state = .connected
+
         connectResolver?.fulfill(true)
         connectResolver = nil
         onConnected?()
-
-        state = .connected
     }
 
     private func onDisconnect(error: Error?) {
@@ -299,6 +299,8 @@ extension WCInteractor {
 
         resetSubscriptions()
 
+        state = .disconnected
+
         if let error = error {
             connectResolver?.reject(error)
         } else {
@@ -307,8 +309,6 @@ extension WCInteractor {
 
         connectResolver = nil
         onDisconnect?(error)
-
-        state = .disconnected
     }
 
     private func onReceiveMessage(text: String) {
