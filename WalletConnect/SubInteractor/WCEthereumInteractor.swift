@@ -17,8 +17,6 @@ public struct WCEthereumInteractor {
     public var onSign: EthSignClosure?
     public var onTransaction: EthTransactionClosure?
 
-    public init() { }
-
     public func handleEvent(_ event: WCEvent, topic: String,
                             decrypted: Data, timestamp: UInt64?) throws {
         switch event {

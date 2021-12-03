@@ -24,8 +24,6 @@ public enum WCInteractorState {
 }
 
 public protocol WCInteractorDelegate: class {
-//    func handleEvent(_ event: WCEvent, topic: String,
-//                     decrypted: Data, timestamp: UInt64?) throws
     func onSessionRequest(param: WCSessionRequestParamType)
 }
 
@@ -103,6 +101,7 @@ open class WCInteractor {
     }
 
     deinit {
+        WCLogger.info("🔥 deinit session.topic:\(session.topic) clientId:\(clientId)")
         disconnect()
     }
 
