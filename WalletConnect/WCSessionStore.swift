@@ -12,6 +12,15 @@ public struct WCSessionStoreItem: Codable {
     public let peerMeta: WCPeerMeta
     public let autoSign: Bool
     public let date: Date
+
+    public init(session: WCSession, peerId: String, peerMeta: WCPeerMeta,
+                autoSign: Bool, date: Date) {
+        self.session = session
+        self.peerId = peerId
+        self.peerMeta = peerMeta
+        self.autoSign = autoSign
+        self.date = date
+    }
 }
 
 public struct WCSessionStore {
