@@ -6,39 +6,53 @@
 
 import Foundation
 import Starscream
-import RxCocoa
-import RxSwift
+import PromiseKit
 
-public typealias SessionRequestClosure = (_ id: Int64, _ peerParam: WCSessionRequestParam) -> Void
 public typealias SessionKilledClosure = () -> Void
+public typealias ConnectedClosure = () -> Void
 public typealias DisconnectClosure = (Error?) -> Void
-public typealias CustomRequestClosure = (_ id: Int64, _ request: [String: Any]) -> Void
+public typealias CustomRequestClosure = (_ id: Int64, _ request: [String: Any],
+                                         _ timestamp: UInt64?) -> Void
 public typealias ErrorClosure = (Error) -> Void
 public typealias ReceiveACKClosure = (_ message: WCInteractor.ACKMessage) -> Void
+
+public enum WCInteractorState {
+    case connected
+    case connecting
+    case paused
+    case disconnected
+}
+
+public protocol WCInteractorDelegate: class {
+    func onSessionRequest(param: WCSessionRequestParamType)
+}
 
 open class WCInteractor {
     public let session: WCSession
 
+    public private(set) var state: WCInteractorState
+
     public let clientId: String
     public let clientMeta: WCPeerMeta
-    public private(set) var addressRequiredCoinTypes = [WCSessionAddressRequiredCoinType]()
     public private(set) var chainType: String?
+    public weak var delegate: WCInteractorDelegate?
 
     public var eth: WCEthereumInteractor
     public var bnb: WCBinanceInteractor
     public var trust: WCTrustInteractor
-    public var ibc: WCIBCInteractor
 
     // incoming event handlers
-    public var onSessionRequest: SessionRequestClosure?
     public var onSessionKilled: SessionKilledClosure?
+    public var onConnected: ConnectedClosure?
     public var onDisconnect: DisconnectClosure?
     public var onError: ErrorClosure?
     public var onCustomRequest: CustomRequestClosure?
     public var onReceiveACK: ReceiveACKClosure?
 
+    // outgoing promise resolvers
+    private var connectResolver: Resolver<Bool>?
+
     private let socket: WebSocket
-    private let maxReconnectCount: Int = 3
     private var handshakeId: Int64 = -1
     private weak var pingTimer: Timer?
     private weak var sessionTimer: Timer?
@@ -61,35 +75,27 @@ open class WCInteractor {
         }
     }
     public var peerMeta: WCPeerMeta?
-    private var userDidCancelWebsocket: Bool
 
-    // Rx
-    private var isConnectedRelay: BehaviorRelay<Bool>
-    private let disposeBag = DisposeBag()
-
-    public init(session: WCSession, meta: WCPeerMeta,
-                uuid: UUID, sessionRequestTimeout: TimeInterval = 20,
-                addressRequiredCoinTypes: [WCSessionAddressRequiredCoinType]) {
+    public init(session: WCSession, meta: WCPeerMeta, uuid: UUID, sessionRequestTimeout: TimeInterval = 20) {
         self.session = session
         self.clientId = uuid.description.lowercased()
         self.clientMeta = meta
         self.sessionRequestTimeout = sessionRequestTimeout
-        self.addressRequiredCoinTypes = addressRequiredCoinTypes
-        self.userDidCancelWebsocket = false
+        self.state = .disconnected
 
         var request = URLRequest(url: session.bridge)
         request.timeoutInterval = sessionRequestTimeout
-        let pinner = FoundationSecurity(allowSelfSigned: true)
-
-        self.socket = WebSocket(request: request, certPinner: pinner)
-        self.isConnectedRelay = .init(value: false)
+        self.socket = WebSocket(request: request)
 
         self.eth = WCEthereumInteractor()
         self.bnb = WCBinanceInteractor()
         self.trust = WCTrustInteractor()
-        self.ibc = WCIBCInteractor()
 
-        socket.delegate = self
+        socket.onConnect = { [weak self] in self?.onConnect() }
+        socket.onDisconnect = { [weak self] error in self?.onDisconnect(error: error) }
+        socket.onText = { [weak self] text in self?.onReceiveMessage(text: text) }
+        socket.onPong = { _ in WCLogger.info("<== pong") }
+        socket.onData = { data in WCLogger.info("<== websocketDidReceiveData: \(data.toHexString())") }
 
         WCLogger.info("interactor init session.topic:\(session.topic) clientId:\(clientId)")
     }
@@ -99,155 +105,89 @@ open class WCInteractor {
         disconnect()
     }
 
-    open func connect() -> Completable {
-        let isConnectedRelay = self.isConnectedRelay
-        let websocket = self.socket
-        let bag = self.disposeBag
-
-        return Completable.create { completable in
-            if isConnectedRelay.value == true {
-                completable(.completed)
-            }
-
-            websocket.connect()
-
-            let timer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { _ in
-                completable(.error(WCError.sessionRequestTimeout))
-            }
-
-            isConnectedRelay.subscribe(onNext: { isConnected in
-                if isConnected {
-                    timer.invalidate()
-                    completable(.completed)
-                }
-            }).disposed(by: bag)
-
-            return Disposables.create()
+    // MARK: - basic abilities
+    open func connect() -> Promise<Bool> {
+        if socket.isConnected {
+            return Promise.value(true)
         }
+        socket.connect()
+        state = .connecting
+        return Promise<Bool> { [weak self] seal in
+            self?.connectResolver = seal
+        }
+    }
+
+    open func pause() {
+        state = .paused
+        socket.disconnect(forceTimeout: nil, closeCode: CloseCode.goingAway.rawValue)
+    }
+
+    open func resume() {
+        socket.connect()
+        state = .connecting
     }
 
     open func disconnect() {
         stopTimers()
 
         socket.disconnect()
-        isConnectedRelay.accept(false)
+        state = .disconnected
 
+        connectResolver = nil
         handshakeId = -1
     }
 
-    open func approveSession(accounts: [String],
-                             chainId: String,
-                             selectedWalletId: String? = nil,
-                             wallets: [WCSessionWalletInfo]? = nil) -> Completable {
+    // MARK: - session operations
+    @discardableResult
+    open func approveSession<T: WCApproveSessionResponseType>(result: T) -> Promise<Void> {
         guard handshakeId > 0 else {
-            return Completable.error(WCError.sessionInvalid)
+            return Promise(error: WCError.sessionInvalid)
         }
-        let result = WCApproveSessionResponse(
-            approved: true,
-            chainId: chainId,
-            accounts: accounts,
-            peerId: clientId,
-            peerMeta: clientMeta,
-            chainType: chainType,
-            selectedWalletId: selectedWalletId,
-            wallets: wallets
-        )
         let response = JSONRPCResponse(id: handshakeId, result: result)
         return encryptAndSend(data: response.encoded)
     }
 
-    open func approveSession(accounts: [String], chainId: Int) -> Completable {
-        let result = WCApproveOriginalSessionResponse(
-            approved: true,
-            chainId: chainId,
-            accounts: accounts,
-            peerId: clientId,
-            peerMeta: clientMeta
-        )
-        let response = JSONRPCResponse(id: handshakeId, result: result)
-        return encryptAndSend(data: response.encoded)
-    }
-
-    open func rejectSession(_ message: String = "Session Rejected") -> Completable {
+    @discardableResult
+    open func rejectSession(_ message: String = "Session Rejected") -> Promise<Void> {
         guard handshakeId > 0 else {
-            return Completable.error(WCError.sessionInvalid)
+            return Promise(error: WCError.sessionInvalid)
         }
         let response = JSONRPCErrorResponse(id: handshakeId, error: JSONRPCError(code: -32000, message: message))
         return encryptAndSend(data: response.encoded)
     }
 
     @discardableResult
-    open func killSession(method: WCEvent) -> Completable {
-        let result = WCSessionUpdateParam(approved: false, chainId: nil, accounts: nil)
-        let response = JSONRPCRequest(id: generateId(), method: method.rawValue, params: [result])
-        let bag = disposeBag
-
-        return Completable.create { [weak self] completable in
-            self?.encryptAndSend(data: response.encoded).subscribe(
-                onCompleted: {
-                    self?.userDidCancelWebsocket = true
-                    self?.disconnect()
-                    self?.onSessionKilled?()
-                    completable(.completed)
-                },
-                onError: { error in
-                    completable(.error(error))
-                })
-                .disposed(by: bag)
-
-            return Disposables.create()
-        }
+    open func killSession<T: WCSessionUpdateParamType>(method: WCEventType, param: T) -> Promise<Void> {
+        let response = JSONRPCRequest(id: generateId(), method: method.rawValue, params: [param])
+        return encryptAndSend(data: response.encoded)
+            .map { [weak self] in
+                self?.onSessionKilled?()
+                self?.disconnect()
+            }
     }
 
     @discardableResult
-    open func updateSession(chainId: String, accounts: [String],
-                            method: WCEvent,
-                            selectedWalletId: String? = nil,
-                            wallets: [WCSessionWalletInfo]? = nil) -> Completable {
-        let result = WCSessionUpdateParam(approved: true,
-                                          chainId: chainId,
-                                          accounts: accounts,
-                                          chainType: chainType,
-                                          selectedWalletId: selectedWalletId,
-                                          wallets: wallets)
-        let response = JSONRPCRequest(id: generateId(), method: method.rawValue, params: [result])
-        return encryptAndSend(data: response.encoded)
-    }
-
-//    open func approveBnbOrder(id: Int64, signed: WCBinanceOrderSignature) -> Promise<WCBinanceTxConfirmParam> {
-//        let result = signed.encodedString
-//        return approveRequest(id: id, result: result)
-//            .then { _ -> Promise<WCBinanceTxConfirmParam> in
-//                return Promise { [weak self] seal in
-//                    self?.bnb.confirmResolvers[id] = seal
-//                }
-//            }
-//    }
-
-    open func sendRequest<T: Codable>(id: Int64, method: String, request: T) -> Completable {
-        let request = JSONRPCRequest.init(id: id, method: method, params: request)
+    open func updateSession<T: WCSessionUpdateParamType>(method: WCEventType, param: T) -> Promise<Void> {
+        let request = JSONRPCRequest(id: generateId(), method: method.rawValue,
+                                     params: [param])
         return encryptAndSend(data: request.encoded)
     }
 
-    open func approveRequest<T: Codable>(id: Int64, result: T) -> Completable {
+    // MARK: - request operations
+    @discardableResult
+    open func approveRequest<T: Codable>(id: Int64, result: T) -> Promise<Void> {
         let response = JSONRPCResponse(id: id, result: result)
         return encryptAndSend(data: response.encoded)
     }
 
-    open func rejectRequest(id: Int64, message: String) -> Completable {
-        let response = JSONRPCErrorResponse(id: id, error: JSONRPCError(code: -32000, message: message))
-        return encryptAndSend(data: response.encoded)
+    open func sendRequest<T: Codable>(id: Int64, method: String, request: T) -> Promise<Void> {
+        let request = JSONRPCRequest(id: id, method: method, params: request)
+        return encryptAndSend(data: request.encoded)
     }
 
-    open func approveIBCTransaction(id: Int64, signed: String) -> Completable {
-        guard let jsonData = signed.data(using: .utf8) else {
-            return Completable.error(WCError.unknown) // TODO: unknown maybe not good enough
-        }
-        let decoder = JSONDecoder()
-        guard let signedRequestParam = try? decoder.decode(WCIBCTransaction.RequestParam.self, from: jsonData), let signature = signedRequestParam.signDoc.signature else {
-            return Completable.error(WCError.unknown) // TODO: unknown maybe not good enough
-        }
-        let response = JSONRPCResponse(id: id, result: signature.signature)
+    @discardableResult
+    open func rejectRequest(id: Int64, message: String) -> Promise<Void> {
+        let response = JSONRPCErrorResponse(id: id, error: JSONRPCError(code: -32000, message: message))
         return encryptAndSend(data: response.encoded)
     }
 }
@@ -273,64 +213,31 @@ extension WCInteractor {
         subscritionLock.unlock()
     }
 
-    private func encryptAndSend(data: Data) -> Completable {
+    private func resetSubscriptions() {
+        subscritionLock.lock(); defer { subscritionLock.unlock() }
+        subscribedTopics.removeAll()
+    }
+
+    public func setupRequestingSession(id: Int64, peerId: String?,
+                                       peerMeta: WCPeerMeta, chainType: String?) {
+        self.handshakeId = id
+        self.peerId = peerId
+        self.peerMeta = peerMeta
+        self.chainType = chainType
+        sessionTimer?.invalidate()
+    }
+
+    private func encryptAndSend(data: Data) -> Promise<Void> {
         WCLogger.info("==> encrypt: \(String(data: data, encoding: .utf8)!) ")
         let encoder = JSONEncoder()
         let payload = try! WCEncryptor.encrypt(data: data, with: session.key)
         let payloadString = encoder.encodeAsUTF8(payload)
         let message = WCSocketMessage(topic: peerId ?? session.topic, type: .pub, payload: payloadString, timestamp: nil)
         let data = message.encoded
-
-        return Completable.create { [weak self] completable in
-            let timer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { _ in
-                completable(.error(WCError.sessionRequestTimeout))
-            }
-
-            self?.socket.write(data: data) {
+        return Promise { seal in
+            socket.write(data: data) {
                 WCLogger.info("==> sent \(String(data: data, encoding: .utf8)!) ")
-                timer.invalidate()
-                completable(.completed)
-            }
-
-            return Disposables.create()
-        }
-    }
-
-    private func handleEvent(_ event: WCEvent, topic: String, decrypted: Data, timestamp: UInt64?) throws {
-        switch event {
-        case .sessionRequest, .dc_sessionRequest:
-            // topic == session.topic
-            let request: JSONRPCRequest<[WCSessionRequestParam]> = try event.decode(decrypted)
-            guard let params = request.params.first else { throw WCError.badJSONRPCRequest }
-            handshakeId = request.id
-            peerId = params.peerId
-            peerMeta = params.peerMeta
-            chainType = params.chainType
-            addressRequiredCoinTypes = params.accountTypes ?? []
-            sessionTimer?.invalidate()
-            onSessionRequest?(request.id, params)
-        case .sessionUpdate, .dc_sessionUpdate:
-            // topic == clientId
-            let request: JSONRPCRequest<[WCSessionUpdateParam]> = try event.decode(decrypted)
-            guard let param = request.params.first else { throw WCError.badJSONRPCRequest }
-            if param.approved == false {
-                WCLogger.info("method:\(event) approved false so disconnect it")
-                userDidCancelWebsocket = true
-                disconnect()
-                onSessionKilled?()
-            }
-        case .cosmos_sendTransaction:
-            let request: JSONRPCRequest<[WCIBCTransaction.RequestParam]> = try event.decode(decrypted)
-            guard let param = request.params.first else { throw WCError.badJSONRPCRequest }
-            let transaction = WCIBCTransaction(requestParam: param)
-            ibc.onTransaction?(request.id, event, transaction, request.session, timestamp)
-        default:
-            if WCEvent.eth.contains(event) {
-                try eth.handleEvent(event, topic: topic, decrypted: decrypted, timestamp: timestamp)
-            } else if WCEvent.bnb.contains(event) {
-                try bnb.handleEvent(event, topic: topic, decrypted: decrypted)
-            } else if WCEvent.trust.contains(event) {
-                try trust.handleEvent(event, topic: topic, decrypted: decrypted)
+                seal.fulfill(())
             }
         }
     }
@@ -369,23 +276,44 @@ extension WCInteractor {
 // MARK: WebSocket event handler
 extension WCInteractor {
     private func onConnect() {
+        WCLogger.info("<== websocketDidConnect")
+
         setupPingTimer()
         checkExistingSession()
 
         subscribe(topic: session.topic)
         subscribe(topic: clientId)
+
+        state = .connected
+
+        connectResolver?.fulfill(true)
+        connectResolver = nil
+        onConnected?()
     }
 
-    // if the error is nil, the behavior is user triggered
     private func onDisconnect(error: Error?) {
+        WCLogger.info("<== websocketDidDisconnect, error: \(error.debugDescription)")
+
         stopTimers()
+
+        resetSubscriptions()
+
+        state = .disconnected
+
+        if let error = error {
+            connectResolver?.reject(error)
+        } else {
+            connectResolver?.fulfill(false)
+        }
+
+        connectResolver = nil
         onDisconnect?(error)
     }
 
     private func onReceiveMessage(text: String) {
         WCLogger.info("<== receive: \(text)")
+        // handle ping in text format :(
         if text == "ping" { return socket.write(pong: Data()) }
-
         guard let (topic, messageType, payload, timestamp) = WCEncryptionPayload.extract(text) else { return }
         switch messageType {
         case .ack:
@@ -402,14 +330,47 @@ extension WCInteractor {
                 WCLogger.info("<== decrypted: \(String(data: decrypted, encoding: .utf8)!)")
                 if let method = json["method"] as? String {
                     if let event = WCEvent(rawValue: method) {
-                        try handleEvent(event, topic: topic, decrypted: decrypted, timestamp: timestamp)
+                        try handleEvent(event, topic: topic,
+                                        decrypted: decrypted,
+                                        timestamp: timestamp)
                     } else if let id = json["id"] as? Int64 {
-                        onCustomRequest?(id, json)
+                        onCustomRequest?(id, json, timestamp)
                     }
                 }
             } catch let error {
                 onError?(error)
                 WCLogger.info("==> onReceiveMessage error: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    private func handleEvent(_ event: WCEvent, topic: String,
+                             decrypted: Data, timestamp: UInt64?) throws {
+        switch event {
+        case .sessionRequest:
+            // topic == session.topic
+            let request: JSONRPCRequest<[WCSessionRequestParam]> = try event.decode(decrypted)
+            guard let param = request.params.first else { throw WCError.badJSONRPCRequest }
+            setupRequestingSession(id: request.id,
+                                   peerId: param.peerId,
+                                   peerMeta: param.peerMeta,
+                                   chainType: nil)
+            delegate?.onSessionRequest(param: param)
+        case .sessionUpdate:
+            // topic == clientId
+            let request: JSONRPCRequest<[WCSessionUpdateParam]> = try event.decode(decrypted)
+            guard let param = request.params.first else { throw WCError.badJSONRPCRequest }
+            if param.approved == false {
+                disconnect()
+            }
+        default:
+            if WCEvent.eth.contains(event) {
+                try eth.handleEvent(event, topic: topic,
+                                    decrypted: decrypted, timestamp: timestamp)
+            } else if WCEvent.bnb.contains(event) {
+                try bnb.handleEvent(event, topic: topic, decrypted: decrypted)
+            } else if WCEvent.trust.contains(event) {
+                try trust.handleEvent(event, topic: topic, decrypted: decrypted)
             }
         }
     }
@@ -421,76 +382,4 @@ extension WCInteractor {
         case rawMessage(topic: String, payload: WCEncryptionPayload?,
                         timestamp: UInt64?)
     }
-}
-
-// MARK: - WebSocketDelegate
-extension WCInteractor: WebSocketDelegate {
-    public func didReceive(event: WebSocketEvent, client: WebSocket) {
-        switch event {
-        case .connected(let headers):
-            WCLogger.info("<== websocketDidConnected: \(headers)")
-            isConnectedRelay.accept(true)
-            onConnect()
-        case .disconnected(let reason, let code):
-            WCLogger.error("<== websocketDidDisconnected: \(reason) with code: \(code)")
-
-            if code == 4022 {
-                let error = WCError.security(desc: reason)
-                onDisconnect(error: error)
-                isConnectedRelay.accept(false)
-                return
-            }
-
-//            reconnect()
-        case .text(let text):
-            onReceiveMessage(text: text)
-        case .binary(let data):
-            WCLogger.info("<== websocketDidReceiveData: \(data.toHexString())")
-        case .pong:
-            WCLogger.info("<== pong")
-        case .ping:
-            break
-//            WCLogger.info("==> ping")
-//            return socket.write(pong: Data())
-        case .error(let error):
-            WCLogger.error("<== websocketDidDisconnected: error:\(error.debugDescription)")
-//            reconnect()
-        case .viabilityChanged(let bool):
-            WCLogger.info("<== websocketViabilityChanged: \(bool)")
-        case .reconnectSuggested(let shouldReconnect):
-//            if shouldReconnect {
-//                reconnect()
-//            }
-            WCLogger.info("<== websocketReconnectSuggested: \(shouldReconnect)")
-        case .cancelled:
-            WCLogger.error("<== websocketDidCancelled")
-            isConnectedRelay.accept(false)
-
-            if userDidCancelWebsocket {
-                onDisconnect(error: nil)
-            } else {
-                let name = peerMeta?.url ?? "Extension/DApp"
-                let error = WCError.security(desc: "\(name) disconnected because of a network error.")
-                onDisconnect(error: error)
-            }
-        }
-    }
-
-//    private func reconnect() {
-//        guard !isConnectedRelay.value else { return }
-//
-//        let reconnectCount = self.maxReconnectCount
-//        let bag = self.disposeBag
-//
-//        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-//            self.connect().retry(reconnectCount)
-//                .subscribe(onCompleted: {
-//                    WCLogger.info("<== websocketDidReconnected")
-//                }, onError: { [weak self] error in
-//                    WCLogger.error("<== websocketFailedToReconnect: error:\(error.localizedDescription)")
-//                    self?.isConnectedRelay.accept(false)
-//                    self?.onDisconnect(error: error)
-//                }).disposed(by: bag)
-//        }
-//    }
 }

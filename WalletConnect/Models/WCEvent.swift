@@ -6,7 +6,17 @@
 
 import Foundation
 
-public enum WCEvent: String {
+public protocol WCEventType {
+    var rawValue: String { get }
+    func decode<T: Codable>(_ data: Data) throws -> JSONRPCRequest<T>
+}
+
+extension WCEventType {
+    public func decode<T: Codable>(_ data: Data) throws -> JSONRPCRequest<T> {
+        return try JSONDecoder().decode(JSONRPCRequest<T>.self, from: data)
+    }
+}
+public enum WCEvent: String, WCEventType {
     case sessionRequest = "wc_sessionRequest"
     case sessionUpdate = "wc_sessionUpdate"
 
@@ -22,13 +32,13 @@ public enum WCEvent: String {
     case trustSignTransacation = "trust_signTransaction"
     case getAccounts = "get_accounts"
 
-    /// extension phase 3 update
-    case cosmos_sendTransaction
-    
-    case dc_instantRequest
-    case dc_sessionRequest
-    case dc_sessionUpdate
-    case dc_killSession
+//    /// extension phase 3 update
+//    case cosmos_sendTransaction
+//
+//    case dc_instantRequest
+//    case dc_sessionRequest
+//    case dc_sessionUpdate
+//    case dc_killSession
 }
 
 extension WCEvent {
@@ -36,10 +46,6 @@ extension WCEvent {
     static let eth = Set<WCEvent>([.ethSign, .ethPersonalSign, .ethSignTypeData, .ethSignTransaction, .ethSendTransaction])
     static let bnb = Set<WCEvent>([.bnbSign, .bnbTransactionConfirm])
     static let trust = Set<WCEvent>([.trustSignTransacation, .getAccounts])
-    static let dc = Set<WCEvent>([.dc_instantRequest, .dc_sessionRequest,
-                                  .dc_sessionUpdate, .dc_killSession])
-
-    func decode<T: Codable>(_ data: Data) throws -> JSONRPCRequest<T> {
-        return try JSONDecoder().decode(JSONRPCRequest<T>.self, from: data)
-    }
+//  static let dc = Set<WCEvent>([.dc_instantRequest, .dc_sessionRequest,
+//                                         .dc_sessionUpdate, .dc_killSession])
 }

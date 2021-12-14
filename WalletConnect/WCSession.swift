@@ -8,43 +8,16 @@ import Foundation
 import CryptoSwift
 
 public struct WCSession: Codable, Equatable {
-    public enum Source: String, Codable {
-        case unknown
-        case wc
-        case cwe
-
-        public var prefix: String {
-            switch self {
-            case .unknown:
-                return ""
-            case .wc:
-                return "wc"
-            case .cwe:
-                return "CWE"
-            }
-        }
-    }
-    public static let legacySessionVersion = 1.0
+    public let decodedString: String
     public let topic: String
     public let version: String
     public let bridge: URL
     public let key: Data
     public let numericalVersion: Double
-    public let source: Source
-    public let isExtension: Bool
+    public let componentDicts: [String : String]
 
     public static func from(string: String) -> WCSession? {
-        var source = Source.unknown
-
         guard let decodedString = WCSession.urlDecodeIfNeed(string: string) else {
-            return nil
-        }
-
-        if decodedString.hasPrefix("wc:") {
-            source = .wc
-        } else if decodedString.hasPrefix("CWE:") {
-            source = .cwe
-        } else {
             return nil
         }
 
@@ -60,11 +33,11 @@ public struct WCSession: Codable, Equatable {
         }
 
         guard let url = URL(string: urlString),
-            let topic = url.user,
-            let version = url.host,
-            let components = NSURLComponents(url: url, resolvingAgainstBaseURL: false) else {
-                return nil
-        }
+              let topic = url.user,
+              let version = url.host,
+              let components = NSURLComponents(url: url, resolvingAgainstBaseURL: false) else {
+                  return nil
+              }
 
         var dicts = [String: String]()
         for query in components.queryItems ?? [] {
@@ -73,18 +46,19 @@ public struct WCSession: Codable, Equatable {
             }
         }
         guard let bridge = dicts["bridge"],
-            let bridgeUrl = URL(string: bridge),
-            let key = dicts["key"] else {
-                return nil
-        }
+              let bridgeUrl = URL(string: bridge),
+              let key = dicts["key"] else {
+                  return nil
+              }
 
-        return WCSession(topic: topic, version: version, bridge: bridgeUrl,
+        return WCSession(decodedString: decodedString, topic: topic,
+                         version: version, bridge: bridgeUrl,
                          key: Data(hex: key),
                          numericalVersion: Double(version) ?? 1.0,
-                         source: source,
-                         isExtension: dicts["role"] == "extension")
+                         componentDicts: dicts)
     }
 
+    // may extract this to external implementation
     private static func urlDecodeIfNeed(string: String) -> String? {
         if string.hasPrefix("wc:") || string.hasPrefix("CWE:") {
             return string

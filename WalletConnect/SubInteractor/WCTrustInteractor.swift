@@ -13,7 +13,9 @@ public struct WCTrustInteractor {
     public var onTransactionSign: TransactionSignClosure?
     public var onGetAccounts: GetAccountsClosure?
 
-    func handleEvent(_ event: WCEvent, topic: String, decrypted: Data) throws {
+    public init() { }
+
+    public func handleEvent(_ event: WCEvent, topic: String, decrypted: Data) throws {
         switch event {
         case .trustSignTransacation:
             let request: JSONRPCRequest<[WCTrustTransaction]> = try event.decode(decrypted)

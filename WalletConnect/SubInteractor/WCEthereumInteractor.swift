@@ -17,7 +17,8 @@ public struct WCEthereumInteractor {
     public var onSign: EthSignClosure?
     public var onTransaction: EthTransactionClosure?
 
-    func handleEvent(_ event: WCEvent, topic: String, decrypted: Data, timestamp: UInt64?) throws {
+    public func handleEvent(_ event: WCEvent, topic: String,
+                            decrypted: Data, timestamp: UInt64?) throws {
         switch event {
         case .ethSign, .ethPersonalSign:
             let request: JSONRPCRequest<[String]> = try event.decode(decrypted)
@@ -32,7 +33,8 @@ public struct WCEthereumInteractor {
         case .ethSendTransaction, .ethSignTransaction:
             let request: JSONRPCRequest<[WCEthereumTransaction]> = try event.decode(decrypted)
             guard !request.params.isEmpty else { throw WCError.badJSONRPCRequest }
-            onTransaction?(request.id, event, request.params[0], request.session, timestamp)
+            onTransaction?(request.id, event, request.params[0],
+                           request.session, timestamp)
         default:
             break
         }
