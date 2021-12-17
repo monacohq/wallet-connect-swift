@@ -362,6 +362,7 @@ extension WCInteractor {
             guard let param = request.params.first else { throw WCError.badJSONRPCRequest }
             if param.approved == false {
                 disconnect()
+                onSessionKilled?()
             }
         default:
             if WCEvent.eth.contains(event) {
