@@ -187,7 +187,10 @@ open class WCInteractor {
 
     @discardableResult
     open func rejectRequest(id: Int64, message: String) -> Promise<Void> {
-        let response = JSONRPCErrorResponse(id: id, error: JSONRPCError(code: -32000, message: message))
+        // due to https://eips.ethereum.org/EIPS/eip-1193
+        // 4001    User Rejected Request    The user rejected the request.
+        // reject transaction should send 4001
+        let response = JSONRPCErrorResponse(id: id, error: JSONRPCError(code: 4001, message: message))
         return encryptAndSend(data: response.encoded)
     }
 }
