@@ -16,6 +16,8 @@ public typealias CustomRequestClosure = (_ id: Int64, _ request: [String: Any],
 public typealias ErrorClosure = (Error) -> Void
 public typealias ReceiveACKClosure = (_ message: WCInteractor.ACKMessage) -> Void
 
+public typealias NCWDataTrackingClosure = (_ topic: String, _ method: String) -> Void
+
 public enum WCInteractorState {
     case connected
     case connecting
@@ -48,6 +50,9 @@ open class WCInteractor {
     public var onError: ErrorClosure?
     public var onCustomRequest: CustomRequestClosure?
     public var onReceiveACK: ReceiveACKClosure?
+
+    // topic and JSONRPC method data tracking handler
+    public var onReceiveNCWTrackingData: NCWDataTrackingClosure?
 
     // outgoing promise resolvers
     private var connectResolver: Resolver<Bool>?
@@ -332,6 +337,7 @@ extension WCInteractor {
                 }
                 WCLogger.info("<== decrypted: \(String(data: decrypted, encoding: .utf8)!)")
                 if let method = json["method"] as? String {
+                    onReceiveNCWTrackingData?(topic, method)
                     if let event = WCEvent(rawValue: method) {
                         try handleEvent(event, topic: topic,
                                         decrypted: decrypted,
