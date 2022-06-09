@@ -337,7 +337,6 @@ extension WCInteractor {
                 }
                 WCLogger.info("<== decrypted: \(String(data: decrypted, encoding: .utf8)!)")
                 if let method = json["method"] as? String {
-                    onReceiveNCWTrackingData?(topic, method)
                     if let event = WCEvent(rawValue: method) {
                         try handleEvent(event, topic: topic,
                                         decrypted: decrypted,
@@ -345,6 +344,7 @@ extension WCInteractor {
                     } else if let id = json["id"] as? Int64 {
                         onCustomRequest?(id, json, timestamp)
                     }
+                    onReceiveNCWTrackingData?(topic, method)
                 }
             } catch let error {
                 onError?(error)
