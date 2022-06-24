@@ -22,7 +22,11 @@ public enum WCEvent: String, WCEventType {
 
     case ethSign = "eth_sign"
     case ethPersonalSign = "personal_sign"
+
     case ethSignTypeData = "eth_signTypedData"
+    case ethSignTypeData_v2 = "eth_signTypedData_v2"
+    case ethSignTypeData_v3 = "eth_signTypedData_v3"
+    case ethSignTypeData_v4 = "eth_signTypedData_v4"
 
     case ethSignTransaction = "eth_signTransaction"
     case ethSendTransaction = "eth_sendTransaction"
@@ -43,7 +47,7 @@ public enum WCEvent: String, WCEventType {
 
 extension WCEvent {
 
-    static let eth = Set<WCEvent>([.ethSign, .ethPersonalSign, .ethSignTypeData, .ethSignTransaction, .ethSendTransaction])
+    static let eth = Set<WCEvent>([.ethSign, .ethPersonalSign, .ethSignTypeData, .ethSignTypeData_v2, .ethSignTypeData_v3, .ethSignTypeData_v4, .ethSignTransaction, .ethSendTransaction])
     static let bnb = Set<WCEvent>([.bnbSign, .bnbTransactionConfirm])
     static let trust = Set<WCEvent>([.trustSignTransacation, .getAccounts])
 //  static let dc = Set<WCEvent>([.dc_instantRequest, .dc_sessionRequest,

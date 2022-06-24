@@ -24,7 +24,7 @@ public struct WCEthereumInteractor {
             let request: JSONRPCRequest<[String]> = try event.decode(decrypted)
             let payload = try JSONDecoder().decode(WCEthereumSignPayload.self, from: decrypted)
             onSign?(request.id, payload, request.session)
-        case .ethSignTypeData:
+        case .ethSignTypeData, .ethSignTypeData_v2, .ethSignTypeData_v3, .ethSignTypeData_v4:
              let payload = try JSONDecoder().decode(WCEthereumSignPayload.self, from: decrypted)
              guard case .signTypeData(let id, _, _) = payload else {
                 return

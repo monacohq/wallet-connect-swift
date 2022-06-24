@@ -17,6 +17,9 @@ extension WCEthereumSignPayload: Decodable {
         case eth_sign
         case personal_sign
         case eth_signTypedData
+        case eth_signTypedData_v2
+        case eth_signTypedData_v3
+        case eth_signTypedData_v4
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -36,7 +39,7 @@ extension WCEthereumSignPayload: Decodable {
             self = .sign(data: Data(hex: strings[1]), raw: strings)
         case .personal_sign:
             self = .personalSign(data: Data(hex: strings[0]), raw: strings)
-        case .eth_signTypedData:
+        case .eth_signTypedData, .eth_signTypedData_v2, .eth_signTypedData_v3, .eth_signTypedData_v4:
             let id = try container.decode(Int64.self, forKey: .id)
             let address = params[0].value as? String ?? ""
             if let string = params[1].value as? String,
