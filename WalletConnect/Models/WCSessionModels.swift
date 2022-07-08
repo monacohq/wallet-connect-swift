@@ -12,6 +12,17 @@ public struct WCSessionRequestParam: WCSessionRequestParamType {
     public let peerId: String
     public let peerMeta: WCPeerMeta
     public let chainId: Int?
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        peerId = try container.decode(String.self, forKey: .peerId)
+        peerMeta = try container.decode(WCPeerMeta.self, forKey: .peerMeta)
+        if let stringChainId = try? container.decodeIfPresent(String.self, forKey: .chainId) {
+            chainId = Int(stringChainId)
+        } else {
+            chainId = try container.decode(Int?.self, forKey: .chainId)
+        }
+    }
 }
 
 //MARK: - session update
