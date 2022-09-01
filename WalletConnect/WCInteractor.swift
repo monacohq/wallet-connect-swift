@@ -81,7 +81,13 @@ open class WCInteractor {
     }
     public var peerMeta: WCPeerMeta?
 
-    public init(session: WCSession, meta: WCPeerMeta, uuid: UUID, sessionRequestTimeout: TimeInterval = 20) {
+    public init(
+        session: WCSession,
+        meta: WCPeerMeta,
+        uuid: UUID,
+        sessionRequestTimeout: TimeInterval = 20,
+        httpHeaders: [String: String] = [:]
+    ) {
         self.session = session
         self.clientId = uuid.description.lowercased()
         self.clientMeta = meta
@@ -90,6 +96,9 @@ open class WCInteractor {
 
         var request = URLRequest(url: session.bridge)
         request.timeoutInterval = sessionRequestTimeout
+        httpHeaders.forEach { key, value in
+            request.setValue(value, forHTTPHeaderField: key)
+        }
         self.socket = WebSocket(request: request)
 
         self.eth = WCEthereumInteractor()
