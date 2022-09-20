@@ -211,12 +211,16 @@ open class WCInteractor {
 
 // MARK: internal funcs
 extension WCInteractor {
-    private func subscribe(topic: String) {
+    public func subscribe(topic: String, allowDuplicateSubscription: Bool = false) {
         subscritionLock.lock()
-        guard !subscribedTopics.contains(topic) else {
-            WCLogger.info("\(topic) already subscribed")
-            subscritionLock.unlock()
-            return
+        if subscribedTopics.contains(topic)  {
+            if allowDuplicateSubscription {
+                subscribedTopics.append(topic)
+            } else {
+                WCLogger.info("\(topic) already subscribed")
+                subscritionLock.unlock()
+                return
+            }
         }
         subscritionLock.unlock()
 
@@ -224,10 +228,6 @@ extension WCInteractor {
         let data = try! JSONEncoder().encode(message)
         socket.write(data: data)
         WCLogger.info("==> subscribe: \(String(data: data, encoding: .utf8)!)")
-
-        subscritionLock.lock()
-        subscribedTopics.append(topic)
-        subscritionLock.unlock()
     }
 
     private func resetSubscriptions() {
