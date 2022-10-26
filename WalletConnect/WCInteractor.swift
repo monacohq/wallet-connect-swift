@@ -174,7 +174,7 @@ open class WCInteractor {
     open func killSession<T: WCSessionUpdateParamType>(method: WCEventType, param: T) -> Promise<Void> {
         let response = JSONRPCRequest(id: generateId(), method: method.rawValue, params: [param])
         return encryptAndSend(data: response.encoded)
-            .map { [weak self] in
+            .ensure { [weak self] in
                 self?.onSessionKilled?()
                 self?.disconnect()
             }
@@ -246,16 +246,20 @@ extension WCInteractor {
 
     private func encryptAndSend(data: Data) -> Promise<Void> {
         WCLogger.info("==> encrypt: \(String(data: data, encoding: .utf8)!) ")
-        let encoder = JSONEncoder()
-        let payload = try! WCEncryptor.encrypt(data: data, with: session.key)
-        let payloadString = encoder.encodeAsUTF8(payload)
-        let message = WCSocketMessage(topic: peerId ?? session.topic, type: .pub, payload: payloadString, timestamp: nil)
-        let data = message.encoded
-        return Promise { seal in
-            socket.write(data: data) {
-                WCLogger.info("==> sent \(String(data: data, encoding: .utf8)!) ")
-                seal.fulfill(())
+        do {
+            let encoder = JSONEncoder()
+            let payload = try WCEncryptor.encrypt(data: data, with: session.key)
+            let payloadString = encoder.encodeAsUTF8(payload)
+            let message = WCSocketMessage(topic: peerId ?? session.topic, type: .pub, payload: payloadString, timestamp: nil)
+            let data = message.encoded
+            return Promise { seal in
+                socket.write(data: data) {
+                    WCLogger.info("==> sent \(String(data: data, encoding: .utf8)!) ")
+                    seal.fulfill(())
+                }
             }
+        } catch {
+            return Promise(error: error)
         }
     }
 
