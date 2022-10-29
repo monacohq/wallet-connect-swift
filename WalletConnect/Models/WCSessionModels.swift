@@ -20,7 +20,7 @@ public struct WCSessionRequestParam: WCSessionRequestParamType {
         if let stringChainId = try? container.decodeIfPresent(String.self, forKey: .chainId) {
             chainId = Int(stringChainId)
         } else {
-            chainId = try container.decode(Int?.self, forKey: .chainId)
+            chainId = try? container.decode(Int?.self, forKey: .chainId)
         }
     }
 }
