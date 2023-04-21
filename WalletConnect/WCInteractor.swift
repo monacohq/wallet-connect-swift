@@ -68,17 +68,7 @@ open class WCInteractor {
     private let subscritionLock = NSLock()
 
     /// comes from dDapp or extension
-    public var peerId: String? {
-        didSet {
-            if let peerID = peerId {
-                /**
-                 Why subscribe peerID?
-                 ACK message is sent with peerID as topic
-                 */
-                subscribe(topic: peerID)
-            }
-        }
-    }
+    public private(set) var peerId: String?
     public var peerMeta: WCPeerMeta?
 
     public init(
@@ -275,6 +265,9 @@ extension WCInteractor {
         if let existing = WCSessionStore.load(session.topic), existing.session == session {
             peerId = existing.peerId
             peerMeta = existing.peerMeta
+            // Why subscribe peerID?
+            // coz ACK message is sent with peerID as topic (extension&dapp connection)
+            subscribe(topic: existing.peerId)
             return
         }
 
