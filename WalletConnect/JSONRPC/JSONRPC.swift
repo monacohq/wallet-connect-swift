@@ -39,11 +39,10 @@ public struct JSONRPCRequest<T: Codable>: Codable {
             id = try values.decode(Int64.self, forKey: .id)
         } catch {
             /// compatible with string id format
-            let stringId = try values.decode(String.self, forKey: .id)
-            if let intId = Int64(stringId) {
-                id = intId
+            if let int64Id = (try? values.decode(String.self, forKey: .id)).flatMap(Int64.init) {
+                id = int64Id
             } else {
-                throw WCError.badJSONRPCRequest
+                throw error
             }
         }
         method = try values.decode(String.self, forKey: .method)
