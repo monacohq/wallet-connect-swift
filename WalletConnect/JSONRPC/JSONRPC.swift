@@ -33,6 +33,22 @@ public struct JSONRPCRequest<T: Codable>: Codable {
         self.params = params
         self.session = session
     }
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        do {
+            id = try values.decode(Int64.self, forKey: .id)
+        } catch {
+            /// compatible with string id format
+            if let int64Id = (try? values.decode(String.self, forKey: .id)).flatMap(Int64.init) {
+                id = int64Id
+            } else {
+                throw error
+            }
+        }
+        method = try values.decode(String.self, forKey: .method)
+        params = try values.decode(T.self, forKey: .params)
+        session = try values.decodeIfPresent(JSONRPCSession.self, forKey: .session)
+    }
 }
 
 struct JSONRPCResponse<T: Codable>: Codable {
