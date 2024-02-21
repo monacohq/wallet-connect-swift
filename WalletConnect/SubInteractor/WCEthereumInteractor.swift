@@ -25,11 +25,12 @@ public struct WCEthereumInteractor {
             let payload = try JSONDecoder().decode(WCEthereumSignPayload.self, from: decrypted)
             onSign?(request.id, payload, request.session)
         case .ethSignTypeData, .ethSignTypeData_v2, .ethSignTypeData_v3, .ethSignTypeData_v4:
+             let request: JSONRPCRequest<[String]>? = try? event.decode(decrypted)
              let payload = try JSONDecoder().decode(WCEthereumSignPayload.self, from: decrypted)
              guard case .signTypeData(let id, _, _) = payload else {
                 return
              }
-             onSign?(id, payload, nil)
+             onSign?(id, payload, request?.session)
         case .ethSendTransaction, .ethSignTransaction:
             let request: JSONRPCRequest<[WCEthereumTransaction]> = try event.decode(decrypted)
             guard !request.params.isEmpty else { throw WCError.badJSONRPCRequest }
